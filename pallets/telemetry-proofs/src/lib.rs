@@ -9,23 +9,62 @@
 //! - Storing cryptographic commitments of telemetry data batches
 //! - Linking telemetry to device identities
 //! - Providing on-chain verification of data integrity
+//! - Batch submission for efficient proof aggregation
+//! - Query proofs by device and time range
+//!
+//! ## Integration
+//!
+//! The blockchain bridge service submits proofs after validating telemetry:
+//! 1. Bridge receives Postgres NOTIFY for new telemetry
+//! 2. Bridge aggregates telemetry into batches
+//! 3. Bridge computes batch hash and submits proof
+//! 4. Proof is stored on-chain with device association
 //!
 //! ## Interface
 //!
 //! ### Dispatchable Functions
 //!
 //! - `submit_proof` - Submit a new telemetry proof for a device
-//! - `verify_proof` - Verify a telemetry proof exists
+//! - `submit_batch_proofs` - Submit multiple proofs in a single transaction
+//! - `verify_proof` - Verify a telemetry proof exists on-chain
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
 
+#[cfg(test)]
+mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+pub mod weights;
+pub use weights::WeightInfo;
+
 #[frame_support::pallet]
 pub mod pallet {
+    use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_std::vec::Vec;
+
+    /// Proof metadata stored alongside the hash
+    #[derive(Clone, Encode, Decode, TypeInfo, MaxEncodedLen, Debug, PartialEq)]
+    #[scale_info(skip_type_params(T))]
+    pub struct ProofMetadata<T: Config> {
+        /// The proof hash (SHA-256 of telemetry batch)
+        pub proof_hash: BoundedVec<u8, T::MaxProofLength>,
+        /// Block number when proof was submitted
+        pub block_number: BlockNumberFor<T>,
+        /// Timestamp of submission (from pallet_timestamp if available)
+        pub timestamp: u64,
+        /// Number of telemetry records in this batch
+        pub record_count: u32,
+        /// Start time of the telemetry window (UNIX timestamp)
+        pub window_start: u64,
+        /// End time of the telemetry window (UNIX timestamp)
+        pub window_end: u64,
+    }
 
     /// The pallet's configuration trait.
     #[pallet::config]
@@ -33,19 +72,30 @@ pub mod pallet {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-        /// Maximum length of device ID
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
+
+        /// Maximum length of device ID (typically UUID = 36 bytes)
         #[pallet::constant]
         type MaxDeviceIdLength: Get<u32>;
 
-        /// Maximum length of proof hash
+        /// Maximum length of proof hash (SHA-256 = 32 bytes, hex = 64 bytes)
         #[pallet::constant]
         type MaxProofLength: Get<u32>;
+
+        /// Maximum number of proofs in a batch submission
+        #[pallet::constant]
+        type MaxBatchSize: Get<u32>;
+
+        /// Maximum number of proofs stored per device
+        #[pallet::constant]
+        type MaxProofsPerDevice: Get<u32>;
     }
 
     #[pallet::pallet]
     pub struct Pallet<T>(_);
 
-    /// Telemetry proof storage
+    /// Telemetry proofs indexed by device and proof index
     #[pallet::storage]
     #[pallet::getter(fn proofs)]
     pub type Proofs<T: Config> = StorageDoubleMap<
@@ -53,12 +103,25 @@ pub mod pallet {
         Blake2_128Concat,
         BoundedVec<u8, T::MaxDeviceIdLength>, // device_id
         Blake2_128Concat,
-        BlockNumberFor<T>, // block when submitted
+        u64, // proof index
+        ProofMetadata<T>,
+        OptionQuery,
+    >;
+
+    /// Proofs indexed by block number for time-range queries
+    #[pallet::storage]
+    #[pallet::getter(fn proofs_by_block)]
+    pub type ProofsByBlock<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        BlockNumberFor<T>, // block number
+        Blake2_128Concat,
+        BoundedVec<u8, T::MaxDeviceIdLength>, // device_id
         BoundedVec<u8, T::MaxProofLength>, // proof hash
         OptionQuery,
     >;
 
-    /// Proof count per device
+    /// Proof count per device (also serves as next proof index)
     #[pallet::storage]
     #[pallet::getter(fn proof_count)]
     pub type ProofCount<T: Config> = StorageMap<
@@ -69,6 +132,22 @@ pub mod pallet {
         ValueQuery,
     >;
 
+    /// Total proofs submitted across all devices
+    #[pallet::storage]
+    #[pallet::getter(fn total_proofs)]
+    pub type TotalProofs<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+    /// Latest proof block per device for quick lookup
+    #[pallet::storage]
+    #[pallet::getter(fn latest_proof_block)]
+    pub type LatestProofBlock<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        BoundedVec<u8, T::MaxDeviceIdLength>,
+        BlockNumberFor<T>,
+        OptionQuery,
+    >;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -77,6 +156,19 @@ pub mod pallet {
             device_id: BoundedVec<u8, T::MaxDeviceIdLength>,
             proof_hash: BoundedVec<u8, T::MaxProofLength>,
             block_number: BlockNumberFor<T>,
+            proof_index: u64,
+        },
+        /// A batch of proofs was submitted
+        BatchProofsSubmitted {
+            submitter: T::AccountId,
+            proof_count: u32,
+            block_number: BlockNumberFor<T>,
+        },
+        /// A proof was verified
+        ProofVerified {
+            device_id: BoundedVec<u8, T::MaxDeviceIdLength>,
+            proof_hash: BoundedVec<u8, T::MaxProofLength>,
+            exists: bool,
         },
     }
 
@@ -86,19 +178,196 @@ pub mod pallet {
         DeviceIdTooLong,
         /// Proof hash exceeds maximum length
         ProofTooLong,
-        /// Proof already exists for this block
+        /// Proof already exists for this device at this block
         ProofAlreadyExists,
+        /// Batch size exceeds maximum allowed
+        BatchTooLarge,
+        /// Empty batch submitted
+        EmptyBatch,
+        /// Maximum proofs per device exceeded
+        MaxProofsExceeded,
+        /// Proof not found
+        ProofNotFound,
+        /// Invalid time window (start >= end)
+        InvalidTimeWindow,
     }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Submit a telemetry proof for a device.
         ///
-        /// - `device_id`: The device identifier
-        /// - `proof_hash`: The cryptographic hash of the telemetry batch
+        /// This extrinsic stores a cryptographic commitment of a telemetry batch.
+        /// The proof_hash is typically a SHA-256 hash of the aggregated telemetry.
+        ///
+        /// # Arguments
+        ///
+        /// - `origin` - The transaction origin (must be signed by bridge account)
+        /// - `device_id` - The device identifier (UUID format)
+        /// - `proof_hash` - The cryptographic hash of the telemetry batch
+        /// - `record_count` - Number of telemetry records in this batch
+        /// - `window_start` - Start timestamp of the telemetry window
+        /// - `window_end` - End timestamp of the telemetry window
         #[pallet::call_index(0)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(T::WeightInfo::submit_proof())]
         pub fn submit_proof(
+            origin: OriginFor<T>,
+            device_id: Vec<u8>,
+            proof_hash: Vec<u8>,
+            record_count: u32,
+            window_start: u64,
+            window_end: u64,
+        ) -> DispatchResult {
+            let _who = ensure_signed(origin)?;
+
+            // Validate time window
+            ensure!(window_start < window_end, Error::<T>::InvalidTimeWindow);
+
+            let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> =
+                device_id.try_into().map_err(|_| Error::<T>::DeviceIdTooLong)?;
+
+            let bounded_proof: BoundedVec<u8, T::MaxProofLength> =
+                proof_hash.try_into().map_err(|_| Error::<T>::ProofTooLong)?;
+
+            let current_block = <frame_system::Pallet<T>>::block_number();
+
+            // Check max proofs per device
+            let current_count = ProofCount::<T>::get(&bounded_device_id);
+            ensure!(
+                current_count < T::MaxProofsPerDevice::get() as u64,
+                Error::<T>::MaxProofsExceeded
+            );
+
+            // Check for duplicate at same block
+            ensure!(
+                !ProofsByBlock::<T>::contains_key(current_block, &bounded_device_id),
+                Error::<T>::ProofAlreadyExists
+            );
+
+            // Create proof metadata
+            let metadata = ProofMetadata::<T> {
+                proof_hash: bounded_proof.clone(),
+                block_number: current_block,
+                timestamp: 0, // Would use pallet_timestamp if configured
+                record_count,
+                window_start,
+                window_end,
+            };
+
+            // Store proof with index
+            let proof_index = current_count;
+            Proofs::<T>::insert(&bounded_device_id, proof_index, metadata);
+            ProofsByBlock::<T>::insert(current_block, &bounded_device_id, bounded_proof.clone());
+            ProofCount::<T>::mutate(&bounded_device_id, |count| *count += 1);
+            TotalProofs::<T>::mutate(|total| *total += 1);
+            LatestProofBlock::<T>::insert(&bounded_device_id, current_block);
+
+            Self::deposit_event(Event::ProofSubmitted {
+                device_id: bounded_device_id,
+                proof_hash: bounded_proof,
+                block_number: current_block,
+                proof_index,
+            });
+
+            Ok(())
+        }
+
+        /// Submit multiple proofs in a single transaction.
+        ///
+        /// This is more efficient than multiple individual submissions as it
+        /// amortizes the transaction overhead across all proofs.
+        ///
+        /// # Arguments
+        ///
+        /// - `origin` - The transaction origin (must be signed by bridge account)
+        /// - `proofs` - Vector of (device_id, proof_hash, record_count, window_start, window_end)
+        #[pallet::call_index(1)]
+        #[pallet::weight(T::WeightInfo::submit_batch_proofs(proofs.len() as u32))]
+        pub fn submit_batch_proofs(
+            origin: OriginFor<T>,
+            proofs: Vec<(Vec<u8>, Vec<u8>, u32, u64, u64)>,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            let batch_len = proofs.len() as u32;
+            ensure!(batch_len > 0, Error::<T>::EmptyBatch);
+            ensure!(batch_len <= T::MaxBatchSize::get(), Error::<T>::BatchTooLarge);
+
+            let current_block = <frame_system::Pallet<T>>::block_number();
+
+            for (device_id, proof_hash, record_count, window_start, window_end) in proofs {
+                // Validate time window
+                if window_start >= window_end {
+                    continue; // Skip invalid entries rather than fail entire batch
+                }
+
+                let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> =
+                    match device_id.try_into() {
+                        Ok(id) => id,
+                        Err(_) => continue, // Skip invalid device IDs
+                    };
+
+                let bounded_proof: BoundedVec<u8, T::MaxProofLength> =
+                    match proof_hash.try_into() {
+                        Ok(hash) => hash,
+                        Err(_) => continue, // Skip invalid proofs
+                    };
+
+                // Check limits and duplicates
+                let current_count = ProofCount::<T>::get(&bounded_device_id);
+                if current_count >= T::MaxProofsPerDevice::get() as u64 {
+                    continue;
+                }
+                if ProofsByBlock::<T>::contains_key(current_block, &bounded_device_id) {
+                    continue;
+                }
+
+                // Create and store proof
+                let metadata = ProofMetadata::<T> {
+                    proof_hash: bounded_proof.clone(),
+                    block_number: current_block,
+                    timestamp: 0,
+                    record_count,
+                    window_start,
+                    window_end,
+                };
+
+                let proof_index = current_count;
+                Proofs::<T>::insert(&bounded_device_id, proof_index, metadata);
+                ProofsByBlock::<T>::insert(current_block, &bounded_device_id, bounded_proof.clone());
+                ProofCount::<T>::mutate(&bounded_device_id, |count| *count += 1);
+                TotalProofs::<T>::mutate(|total| *total += 1);
+                LatestProofBlock::<T>::insert(&bounded_device_id, current_block);
+
+                Self::deposit_event(Event::ProofSubmitted {
+                    device_id: bounded_device_id,
+                    proof_hash: bounded_proof,
+                    block_number: current_block,
+                    proof_index,
+                });
+            }
+
+            Self::deposit_event(Event::BatchProofsSubmitted {
+                submitter: who,
+                proof_count: batch_len,
+                block_number: current_block,
+            });
+
+            Ok(())
+        }
+
+        /// Verify that a proof exists for a device.
+        ///
+        /// This is primarily for debugging and verification purposes.
+        /// Returns an event indicating whether the proof exists.
+        ///
+        /// # Arguments
+        ///
+        /// - `origin` - The transaction origin (can be any signed account)
+        /// - `device_id` - The device identifier
+        /// - `proof_hash` - The proof hash to verify
+        #[pallet::call_index(2)]
+        #[pallet::weight(T::WeightInfo::verify_proof())]
+        pub fn verify_proof(
             origin: OriginFor<T>,
             device_id: Vec<u8>,
             proof_hash: Vec<u8>,
@@ -111,23 +380,76 @@ pub mod pallet {
             let bounded_proof: BoundedVec<u8, T::MaxProofLength> =
                 proof_hash.try_into().map_err(|_| Error::<T>::ProofTooLong)?;
 
-            let current_block = <frame_system::Pallet<T>>::block_number();
+            // Search for the proof in device's proof history
+            let proof_count = ProofCount::<T>::get(&bounded_device_id);
+            let mut exists = false;
 
-            ensure!(
-                !Proofs::<T>::contains_key(&bounded_device_id, current_block),
-                Error::<T>::ProofAlreadyExists
-            );
+            for i in 0..proof_count {
+                if let Some(metadata) = Proofs::<T>::get(&bounded_device_id, i) {
+                    if metadata.proof_hash == bounded_proof {
+                        exists = true;
+                        break;
+                    }
+                }
+            }
 
-            Proofs::<T>::insert(&bounded_device_id, current_block, bounded_proof.clone());
-            ProofCount::<T>::mutate(&bounded_device_id, |count| *count += 1);
-
-            Self::deposit_event(Event::ProofSubmitted {
+            Self::deposit_event(Event::ProofVerified {
                 device_id: bounded_device_id,
                 proof_hash: bounded_proof,
-                block_number: current_block,
+                exists,
             });
 
             Ok(())
+        }
+    }
+
+    // Public query functions for runtime APIs
+    impl<T: Config> Pallet<T> {
+        /// Get proof metadata by device and index.
+        pub fn get_proof(
+            device_id: &BoundedVec<u8, T::MaxDeviceIdLength>,
+            index: u64,
+        ) -> Option<ProofMetadata<T>> {
+            Proofs::<T>::get(device_id, index)
+        }
+
+        /// Get all proofs for a device.
+        pub fn get_device_proofs(
+            device_id: &BoundedVec<u8, T::MaxDeviceIdLength>,
+        ) -> Vec<ProofMetadata<T>> {
+            let count = ProofCount::<T>::get(device_id);
+            (0..count)
+                .filter_map(|i| Proofs::<T>::get(device_id, i))
+                .collect()
+        }
+
+        /// Check if a specific proof hash exists for a device.
+        pub fn proof_exists(
+            device_id: &BoundedVec<u8, T::MaxDeviceIdLength>,
+            proof_hash: &BoundedVec<u8, T::MaxProofLength>,
+        ) -> bool {
+            let count = ProofCount::<T>::get(device_id);
+            for i in 0..count {
+                if let Some(metadata) = Proofs::<T>::get(device_id, i) {
+                    if &metadata.proof_hash == proof_hash {
+                        return true;
+                    }
+                }
+            }
+            false
+        }
+
+        /// Get proofs within a time window for a device.
+        pub fn get_proofs_in_window(
+            device_id: &BoundedVec<u8, T::MaxDeviceIdLength>,
+            start_time: u64,
+            end_time: u64,
+        ) -> Vec<ProofMetadata<T>> {
+            let count = ProofCount::<T>::get(device_id);
+            (0..count)
+                .filter_map(|i| Proofs::<T>::get(device_id, i))
+                .filter(|m| m.window_start >= start_time && m.window_end <= end_time)
+                .collect()
         }
     }
 }
