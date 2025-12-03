@@ -1,0 +1,122 @@
+# =============================================================================
+# ARED Edge Substrate Node - Kubernetes StatefulSet
+# =============================================================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: substrate-node
+  namespace: ared-edge
+  labels:
+    app.kubernetes.io/name: substrate-node
+    app.kubernetes.io/component: blockchain
+spec:
+  serviceName: substrate-node
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: substrate-node
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: substrate-node
+        app.kubernetes.io/component: blockchain
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9615"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: substrate-node
+          image: ghcr.io/ared/substrate-node:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--chain=production"
+            - "--base-path=/data"
+            - "--port=30333"
+            - "--rpc-port=9944"
+            - "--rpc-cors=all"
+            - "--rpc-methods=safe"
+            - "--prometheus-port=9615"
+            - "--prometheus-external"
+            - "--name=ared-edge-validator"
+          ports:
+            - name: p2p
+              containerPort: 30333
+              protocol: TCP
+            - name: rpc
+              containerPort: 9944
+              protocol: TCP
+            - name: metrics
+              containerPort: 9615
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: 2Gi
+            limits:
+              cpu: "2000m"
+              memory: 4Gi
+          volumeMounts:
+            - name: chain-data
+              mountPath: /data
+            - name: node-key
+              mountPath: /secrets
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9944
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9944
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: node-key
+          secret:
+            secretName: substrate-node-key
+  volumeClaimTemplates:
+    - metadata:
+        name: chain-data
+        labels:
+          app.kubernetes.io/name: substrate-node
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 100Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: substrate-node
+  namespace: ared-edge
+  labels:
+    app.kubernetes.io/name: substrate-node
+spec:
+  type: ClusterIP
+  ports:
+    - name: rpc
+      port: 9944
+      targetPort: rpc
+    - name: p2p
+      port: 30333
+      targetPort: p2p
+    - name: metrics
+      port: 9615
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: substrate-node
