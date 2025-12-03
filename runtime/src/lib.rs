@@ -216,13 +216,32 @@ impl pallet_sudo::Config for Runtime {
 // ARED Telemetry Proofs pallet configuration
 impl pallet_telemetry_proofs::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_telemetry_proofs::weights::SubstrateWeight<Runtime>;
+    /// Maximum device ID length (UUID = 36 chars, with buffer = 64)
     type MaxDeviceIdLength = frame_support::traits::ConstU32<64>;
+    /// Maximum proof hash length (SHA-256 hex = 64 chars, with buffer = 128)
     type MaxProofLength = frame_support::traits::ConstU32<128>;
+    /// Maximum proofs in a single batch submission
+    type MaxBatchSize = frame_support::traits::ConstU32<100>;
+    /// Maximum proof records per device (data retention limit)
+    type MaxProofsPerDevice = frame_support::traits::ConstU32<10000>;
 }
 
 // ARED Carbon Credits pallet configuration
 impl pallet_carbon_credits::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_carbon_credits::weights::SubstrateWeight<Runtime>;
+    /// Maximum device ID length
+    type MaxDeviceIdLength = frame_support::traits::ConstU32<64>;
+    /// Credits per ton of CO2 avoided (1000 credits = 1 carbon credit token)
+    type CreditsPerTonCO2 = frame_support::traits::ConstU128<1000>;
+    /// Default emission factor: 1.5 kg CO2/kWh (scaled by 1000)
+    /// Based on traditional biomass cooking displacement
+    type DefaultEmissionFactor = frame_support::traits::ConstU32<1500>;
+    /// Minimum energy (Wh) before claiming credits (1 kWh = 1000 Wh)
+    type MinClaimableEnergy = frame_support::traits::ConstU128<1000>;
+    /// Maximum issuance records per device
+    type MaxIssuanceRecords = frame_support::traits::ConstU32<10000>;
 }
 
 // Construct the runtime
