@@ -1,0 +1,84 @@
+# =============================================================================
+# ARED Edge Substrate Node - Cargo Workspace
+# =============================================================================
+
+[workspace]
+members = [
+    "node",
+    "runtime",
+    "pallets/*",
+]
+resolver = "2"
+
+[workspace.package]
+version = "1.0.0"
+authors = ["ARED Team <engineering@a-r-e-d.com>"]
+edition = "2021"
+license = "MIT"
+homepage = "https://a-r-e-d.com"
+repository = "https://github.com/ared/ared-edge-substrate-node"
+
+[workspace.dependencies]
+# Substrate dependencies - using polkadot-sdk umbrella crate
+# Version should match your target Substrate version
+codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
+scale-info = { version = "2.10", default-features = false, features = ["derive"] }
+
+# Frame dependencies
+frame-support = { version = "28.0.0", default-features = false }
+frame-system = { version = "28.0.0", default-features = false }
+frame-executive = { version = "28.0.0", default-features = false }
+frame-benchmarking = { version = "28.0.0", default-features = false }
+
+# Pallet dependencies
+pallet-balances = { version = "28.0.0", default-features = false }
+pallet-timestamp = { version = "27.0.0", default-features = false }
+pallet-transaction-payment = { version = "28.0.0", default-features = false }
+pallet-sudo = { version = "28.0.0", default-features = false }
+
+# SP dependencies
+sp-core = { version = "28.0.0", default-features = false }
+sp-io = { version = "30.0.0", default-features = false }
+sp-runtime = { version = "31.0.0", default-features = false }
+sp-std = { version = "14.0.0", default-features = false }
+sp-api = { version = "26.0.0", default-features = false }
+sp-block-builder = { version = "26.0.0", default-features = false }
+sp-consensus-aura = { version = "0.32.0", default-features = false }
+sp-consensus-grandpa = { version = "13.0.0", default-features = false }
+sp-inherents = { version = "26.0.0", default-features = false }
+sp-offchain = { version = "26.0.0", default-features = false }
+sp-session = { version = "27.0.0", default-features = false }
+sp-transaction-pool = { version = "26.0.0", default-features = false }
+sp-version = { version = "29.0.0", default-features = false }
+
+# Client dependencies (for node)
+sc-cli = { version = "0.36.0" }
+sc-client-api = { version = "28.0.0" }
+sc-consensus = { version = "0.33.0" }
+sc-consensus-aura = { version = "0.34.0" }
+sc-consensus-grandpa = { version = "0.19.0" }
+sc-executor = { version = "0.32.0" }
+sc-network = { version = "0.34.0" }
+sc-rpc = { version = "29.0.0" }
+sc-rpc-api = { version = "0.33.0" }
+sc-service = { version = "0.35.0" }
+sc-telemetry = { version = "15.0.0" }
+sc-transaction-pool = { version = "28.0.0" }
+sc-transaction-pool-api = { version = "28.0.0" }
+
+# Build dependencies
+substrate-build-script-utils = { version = "11.0.0" }
+substrate-wasm-builder = { version = "17.0.0" }
+
+# Local pallets
+pallet-carbon-credits = { path = "pallets/carbon-credits", default-features = false }
+pallet-telemetry-proofs = { path = "pallets/telemetry-proofs", default-features = false }
+
+[profile.release]
+panic = "unwind"
+opt-level = 3
+
+[profile.production]
+inherits = "release"
+lto = true
+codegen-units = 1
