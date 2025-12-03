@@ -11,7 +11,7 @@
 
 **DO NOT** create a public GitHub issue for security vulnerabilities.
 
-Report security vulnerabilities by emailing: security@a-r-e-d.com
+
 
 Include:
 1. Type of vulnerability
