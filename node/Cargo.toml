@@ -36,24 +36,24 @@ sc-telemetry.workspace = true
 sc-transaction-pool.workspace = true
 sc-transaction-pool-api.workspace = true
 
-# Substrate primitives (SDK stable2503)
+# Substrate primitives (SDK October 2025)
 sp-api.workspace = true
 sp-block-builder.workspace = true
-sp-blockchain = { version = "40.0.0" }
+sp-blockchain = { version = "43" }
 sp-consensus-aura.workspace = true
 sp-consensus-grandpa.workspace = true
 sp-core.workspace = true
 sp-inherents.workspace = true
 sp-io.workspace = true
 sp-runtime.workspace = true
-sp-timestamp = { version = "38.0.0" }
+sp-timestamp = { version = "40" }
 
-# RPC dependencies (SDK stable2503)
+# RPC dependencies (SDK October 2025)
 jsonrpsee = { version = "0.24", features = ["server"] }
-pallet-transaction-payment-rpc = { version = "44.0.0" }
-substrate-frame-rpc-system = { version = "42.0.0" }
-frame-system-rpc-runtime-api = { version = "38.0.0" }
-pallet-transaction-payment-rpc-runtime-api = { version = "42.0.0" }
+pallet-transaction-payment-rpc = { version = "46" }
+substrate-frame-rpc-system = { version = "44" }
+frame-system-rpc-runtime-api = { version = "40" }
+pallet-transaction-payment-rpc-runtime-api = { version = "44" }
 
 # Logging
 log = "0.4"
