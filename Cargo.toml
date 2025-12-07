@@ -19,56 +19,56 @@ homepage = "https://a-r-e-d.com"
 repository = "https://github.com/ared/ared-edge-substrate-node"
 
 [workspace.dependencies]
-# Substrate dependencies - Polkadot SDK stable2503 (SDK ~1.17.0)
+# Substrate dependencies - Polkadot SDK stable2409 (SDK ~1.16.0)
 # All versions aligned from polkadot-fellows/runtimes for compatibility
 codec = { package = "parity-scale-codec", version = "3.7", default-features = false, features = ["derive"] }
 scale-info = { version = "2.11", default-features = false, features = ["derive"] }
 
-# Frame dependencies (SDK October 2025)
-frame-support = { version = "43", default-features = false }
-frame-system = { version = "43", default-features = false }
-frame-executive = { version = "43", default-features = false }
-frame-benchmarking = { version = "43", default-features = false }
+# Frame dependencies (SDK stable2409)
+frame-support = { version = "42.0.0", default-features = false }
+frame-system = { version = "42.0.0", default-features = false }
+frame-executive = { version = "42.0.1", default-features = false }
+frame-benchmarking = { version = "42.0.0", default-features = false }
 
-# Pallet dependencies (SDK October 2025)
-pallet-balances = { version = "44", default-features = false }
-pallet-timestamp = { version = "42", default-features = false }
-pallet-transaction-payment = { version = "43", default-features = false }
-pallet-sudo = { version = "43", default-features = false }
+# Pallet dependencies (SDK stable2409)
+pallet-balances = { version = "43.0.1", default-features = false }
+pallet-timestamp = { version = "41.0.0", default-features = false }
+pallet-transaction-payment = { version = "42.0.0", default-features = false }
+pallet-sudo = { version = "42.0.0", default-features = false }
 
-# SP dependencies (SDK October 2025)
-sp-core = { version = "40", default-features = false }
-sp-io = { version = "43", default-features = false }
-sp-runtime = { version = "44", default-features = false }
-sp-std = { version = "14", default-features = false }
-sp-api = { version = "40", default-features = false }
-sp-block-builder = { version = "40", default-features = false }
-sp-consensus-aura = { version = "0.47", default-features = false }
-sp-consensus-grandpa = { version = "26", default-features = false }
-sp-inherents = { version = "40", default-features = false }
-sp-offchain = { version = "40", default-features = false }
-sp-session = { version = "41", default-features = false }
-sp-transaction-pool = { version = "40", default-features = false }
-sp-version = { version = "42", default-features = false }
+# SP dependencies (SDK stable2409)
+sp-core = { version = "37.0.0", default-features = false }
+sp-io = { version = "40.0.0", default-features = false }
+sp-runtime = { version = "41.0.0", default-features = false }
+sp-std = { version = "14.0.0", default-features = false }
+sp-api = { version = "37.0.0", default-features = false }
+sp-block-builder = { version = "37.0.0", default-features = false }
+sp-consensus-aura = { version = "0.43.0", default-features = false }
+sp-consensus-grandpa = { version = "23.0.0", default-features = false }
+sp-inherents = { version = "37.0.0", default-features = false }
+sp-offchain = { version = "37.0.0", default-features = false }
+sp-session = { version = "38.0.0", default-features = false }
+sp-transaction-pool = { version = "37.0.0", default-features = false }
+sp-version = { version = "39.0.0", default-features = false }
 
-# Client dependencies (SDK October 2025)
-sc-cli = { version = "0.53" }
-sc-client-api = { version = "43" }
-sc-consensus = { version = "0.48" }
-sc-consensus-aura = { version = "0.49" }
-sc-consensus-grandpa = { version = "0.34" }
-sc-executor = { version = "0.47" }
-sc-network = { version = "0.49" }
-sc-rpc = { version = "44" }
-sc-rpc-api = { version = "0.48" }
-sc-service = { version = "0.50" }
-sc-telemetry = { version = "29" }
-sc-transaction-pool = { version = "43" }
-sc-transaction-pool-api = { version = "43" }
+# Client dependencies (SDK stable2409)
+sc-cli = { version = "0.49.0" }
+sc-client-api = { version = "39.0.0" }
+sc-consensus = { version = "0.44.0" }
+sc-consensus-aura = { version = "0.45.0" }
+sc-consensus-grandpa = { version = "0.30.0" }
+sc-executor = { version = "0.43.0" }
+sc-network = { version = "0.45.0" }
+sc-rpc = { version = "40.0.0" }
+sc-rpc-api = { version = "0.44.0" }
+sc-service = { version = "0.46.0" }
+sc-telemetry = { version = "25.0.0" }
+sc-transaction-pool = { version = "39.0.0" }
+sc-transaction-pool-api = { version = "39.0.0" }
 
-# Build dependencies (SDK October 2025)
-substrate-build-script-utils = { version = "14" }
-substrate-wasm-builder = { version = "28" }
+# Build dependencies (SDK stable2409)
+substrate-build-script-utils = { version = "12.0.0" }
+substrate-wasm-builder = { version = "25.0.0" }
 
 # Local pallets
 pallet-carbon-credits = { path = "pallets/carbon-credits", default-features = false }
