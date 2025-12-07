@@ -24,11 +24,11 @@ repository = "https://github.com/ared/ared-edge-substrate-node"
 codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
 scale-info = { version = "2.11", default-features = false, features = ["derive"] }
 
-# Frame dependencies (SDK stable2409)
-frame-support = { version = "36.0.0", default-features = false }
-frame-system = { version = "36.0.0", default-features = false }
-frame-executive = { version = "36.0.0", default-features = false }
-frame-benchmarking = { version = "36.0.0", default-features = false }
+# Frame dependencies (SDK stable2409 - exact versions for compatibility)
+frame-support = { version = "=36.0.0", default-features = false }
+frame-system = { version = "=36.0.0", default-features = false }
+frame-executive = { version = "=36.0.0", default-features = false }
+frame-benchmarking = { version = "=36.0.0", default-features = false }
 
 # Pallet dependencies (SDK stable2409)
 pallet-balances = { version = "37.0.0", default-features = false }
