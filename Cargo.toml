@@ -19,10 +19,10 @@ homepage = "https://a-r-e-d.com"
 repository = "https://github.com/ared/ared-edge-substrate-node"
 
 [workspace.dependencies]
-# Substrate dependencies - polkadot-sdk April 2024 (1.9.0) versions
-# All versions tested together for compatibility
-codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
-scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
+# Substrate dependencies - using older codec to avoid enum index check bug
+# parity-scale-codec 3.2.x doesn't have strict index checking that breaks sc-network
+codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = ["derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 
 # Frame dependencies (polkadot-sdk 1.9.0 - April 2024)
 frame-support = { version = "26.0.0", default-features = false }
