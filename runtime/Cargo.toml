@@ -31,7 +31,7 @@ pallet-timestamp.workspace = true
 pallet-transaction-payment.workspace = true
 pallet-sudo.workspace = true
 
-# Consensus (polkadot-sdk 1.9.0)
+# Consensus (SDK 1.6.0)
 pallet-aura = { version = "25.0.0", default-features = false }
 pallet-grandpa = { version = "26.0.0", default-features = false }
 
@@ -50,7 +50,7 @@ sp-std.workspace = true
 sp-transaction-pool.workspace = true
 sp-version.workspace = true
 
-# RPC runtime APIs (polkadot-sdk 1.9.0)
+# RPC runtime APIs (SDK 1.6.0)
 frame-system-rpc-runtime-api = { version = "24.0.0", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { version = "26.0.0", default-features = false }
 
