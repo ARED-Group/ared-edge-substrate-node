@@ -12,16 +12,16 @@ license = "MIT"
 description = "Pallet for carbon credit calculations and token logic"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
-scale-info = { version = "2.10", default-features = false, features = ["derive"] }
-frame-support = { version = "28.0.0", default-features = false }
-frame-system = { version = "28.0.0", default-features = false }
-sp-std = { version = "14.0.0", default-features = false }
-sp-runtime = { version = "31.0.0", default-features = false }
+codec.workspace = true
+scale-info.workspace = true
+frame-support.workspace = true
+frame-system.workspace = true
+sp-std.workspace = true
+sp-runtime.workspace = true
 
 [dev-dependencies]
-sp-core = { version = "28.0.0" }
-sp-io = { version = "30.0.0" }
+sp-core.workspace = true
+sp-io.workspace = true
 
 [features]
 default = ["std"]
