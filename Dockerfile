@@ -44,6 +44,10 @@ RUN cargo build --release --package ared-edge-node || true
 # Copy actual source code
 COPY . .
 
+# Pin transitive dependencies requiring newer Rust to compatible versions
+RUN cargo update home@0.5.12 --precise 0.5.9 || true && \
+    cargo update globset@0.4.18 --precise 0.4.14 || true
+
 # Build the actual binary
 RUN cargo build --release --package ared-edge-node
 
