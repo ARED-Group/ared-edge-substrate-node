@@ -3,7 +3,7 @@
 //! These weights ensure proper transaction fee calculation
 //! and prevent denial-of-service attacks.
 
-use frame_support::weights::Weight;
+use frame_support::{traits::Get, weights::Weight};
 
 /// Weight functions for the pallet.
 pub trait WeightInfo {
