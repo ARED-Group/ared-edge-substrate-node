@@ -28,7 +28,8 @@ RUN rustup target add wasm32-unknown-unknown
 WORKDIR /build
 
 # Copy manifests first for better layer caching
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml ./
+COPY Cargo.lock* ./
 COPY node/Cargo.toml ./node/
 COPY runtime/Cargo.toml ./runtime/
 COPY pallets/ ./pallets/
@@ -87,9 +88,11 @@ VOLUME ["/data"]
 # 9615  - Prometheus metrics
 EXPOSE 30333 9944 9615
 
-# Health check
+# Health check using RPC system_health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -sf http://localhost:9944/health || exit 1
+    CMD curl -sf -X POST -H "Content-Type: application/json" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"system_health"}' \
+    http://localhost:9944 | grep -q '"isSyncing"' || exit 1
 
 # Default entrypoint
 ENTRYPOINT ["ared-edge-node"]
