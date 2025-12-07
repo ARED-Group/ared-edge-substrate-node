@@ -31,9 +31,9 @@ pallet-timestamp.workspace = true
 pallet-transaction-payment.workspace = true
 pallet-sudo.workspace = true
 
-# Consensus (SDK stable2409)
-pallet-aura = { version = "41.0.0", default-features = false }
-pallet-grandpa = { version = "42.0.0", default-features = false }
+# Consensus
+pallet-aura = { version = "39.0.0", default-features = false }
+pallet-grandpa = { version = "40.0.0", default-features = false }
 
 # SP
 sp-api.workspace = true
@@ -42,6 +42,7 @@ sp-consensus-aura.workspace = true
 sp-consensus-grandpa.workspace = true
 sp-core.workspace = true
 sp-genesis-builder = { version = "0.17.0", default-features = false }
+sp-storage = { version = "22.0.0", default-features = false }
 sp-inherents.workspace = true
 sp-offchain.workspace = true
 sp-runtime.workspace = true
@@ -50,9 +51,9 @@ sp-std.workspace = true
 sp-transaction-pool.workspace = true
 sp-version.workspace = true
 
-# RPC runtime APIs (SDK stable2409)
-frame-system-rpc-runtime-api = { version = "38.0.0", default-features = false }
-pallet-transaction-payment-rpc-runtime-api = { version = "42.0.0", default-features = false }
+# RPC runtime APIs
+frame-system-rpc-runtime-api = { version = "36.0.0", default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { version = "40.0.0", default-features = false }
 
 # Local pallets
 pallet-carbon-credits.workspace = true
@@ -85,6 +86,7 @@ std = [
     "sp-runtime/std",
     "sp-session/std",
     "sp-std/std",
+    "sp-storage/std",
     "sp-transaction-pool/std",
     "sp-version/std",
     "pallet-carbon-credits/std",
