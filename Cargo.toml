@@ -19,56 +19,56 @@ homepage = "https://a-r-e-d.com"
 repository = "https://github.com/ared/ared-edge-substrate-node"
 
 [workspace.dependencies]
-# Substrate dependencies - aligned to polkadot-sdk stable2312-1 (December 2023)
-# All versions from the same polkadot-sdk release for compatibility
-codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
-scale-info = { version = "2.10", default-features = false, features = ["derive"] }
+# Substrate dependencies - polkadot-sdk April 2024 (1.9.0) versions
+# All versions tested together for compatibility
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
 
-# Frame dependencies (aligned with sc-network 0.34.0)
-frame-support = { version = "28.0.0", default-features = false }
-frame-system = { version = "28.0.0", default-features = false }
-frame-executive = { version = "28.0.0", default-features = false }
-frame-benchmarking = { version = "28.0.0", default-features = false }
+# Frame dependencies (polkadot-sdk 1.9.0 - April 2024)
+frame-support = { version = "26.0.0", default-features = false }
+frame-system = { version = "26.0.0", default-features = false }
+frame-executive = { version = "26.0.0", default-features = false }
+frame-benchmarking = { version = "26.0.0", default-features = false }
 
-# Pallet dependencies (aligned with sc-network 0.34.0)
-pallet-balances = { version = "28.0.0", default-features = false }
-pallet-timestamp = { version = "27.0.0", default-features = false }
-pallet-transaction-payment = { version = "28.0.0", default-features = false }
-pallet-sudo = { version = "28.0.0", default-features = false }
+# Pallet dependencies (polkadot-sdk 1.9.0)
+pallet-balances = { version = "26.0.0", default-features = false }
+pallet-timestamp = { version = "25.0.0", default-features = false }
+pallet-transaction-payment = { version = "26.0.0", default-features = false }
+pallet-sudo = { version = "26.0.0", default-features = false }
 
-# SP dependencies (aligned with sc-network 0.34.0)
-sp-core = { version = "28.0.0", default-features = false }
-sp-io = { version = "30.0.0", default-features = false }
-sp-runtime = { version = "31.0.0", default-features = false }
-sp-std = { version = "14.0.0", default-features = false }
-sp-api = { version = "26.0.0", default-features = false }
-sp-block-builder = { version = "26.0.0", default-features = false }
-sp-consensus-aura = { version = "0.32.0", default-features = false }
-sp-consensus-grandpa = { version = "13.0.0", default-features = false }
-sp-inherents = { version = "26.0.0", default-features = false }
-sp-offchain = { version = "26.0.0", default-features = false }
-sp-session = { version = "27.0.0", default-features = false }
-sp-transaction-pool = { version = "26.0.0", default-features = false }
-sp-version = { version = "29.0.0", default-features = false }
+# SP dependencies (polkadot-sdk 1.9.0)
+sp-core = { version = "26.0.0", default-features = false }
+sp-io = { version = "28.0.0", default-features = false }
+sp-runtime = { version = "29.0.0", default-features = false }
+sp-std = { version = "13.0.0", default-features = false }
+sp-api = { version = "24.0.0", default-features = false }
+sp-block-builder = { version = "24.0.0", default-features = false }
+sp-consensus-aura = { version = "0.30.0", default-features = false }
+sp-consensus-grandpa = { version = "11.0.0", default-features = false }
+sp-inherents = { version = "24.0.0", default-features = false }
+sp-offchain = { version = "24.0.0", default-features = false }
+sp-session = { version = "25.0.0", default-features = false }
+sp-transaction-pool = { version = "24.0.0", default-features = false }
+sp-version = { version = "27.0.0", default-features = false }
 
-# Client dependencies (polkadot-sdk stable2312 - sc-network 0.34.0 to avoid codec bug)
-sc-cli = { version = "0.36.0" }
-sc-client-api = { version = "28.0.0" }
-sc-consensus = { version = "0.33.0" }
-sc-consensus-aura = { version = "0.34.0" }
-sc-consensus-grandpa = { version = "0.19.0" }
-sc-executor = { version = "0.32.0" }
-sc-network = { version = "0.34.0" }
-sc-rpc = { version = "29.0.0" }
-sc-rpc-api = { version = "0.33.0" }
-sc-service = { version = "0.35.0" }
-sc-telemetry = { version = "15.0.0" }
-sc-transaction-pool = { version = "28.0.0" }
-sc-transaction-pool-api = { version = "28.0.0" }
+# Client dependencies (polkadot-sdk 1.9.0 - sc-network 0.33.0)
+sc-cli = { version = "0.34.0" }
+sc-client-api = { version = "26.0.0" }
+sc-consensus = { version = "0.31.0" }
+sc-consensus-aura = { version = "0.32.0" }
+sc-consensus-grandpa = { version = "0.17.0" }
+sc-executor = { version = "0.30.0" }
+sc-network = { version = "0.33.0" }
+sc-rpc = { version = "27.0.0" }
+sc-rpc-api = { version = "0.31.0" }
+sc-service = { version = "0.34.0" }
+sc-telemetry = { version = "13.0.0" }
+sc-transaction-pool = { version = "26.0.0" }
+sc-transaction-pool-api = { version = "26.0.0" }
 
-# Build dependencies (polkadot-sdk stable2312)
-substrate-build-script-utils = { version = "11.0.0" }
-substrate-wasm-builder = { version = "18.0.0" }
+# Build dependencies (polkadot-sdk 1.9.0)
+substrate-build-script-utils = { version = "10.0.0" }
+substrate-wasm-builder = { version = "16.0.0" }
 
 # Local pallets
 pallet-carbon-credits = { path = "pallets/carbon-credits", default-features = false }
