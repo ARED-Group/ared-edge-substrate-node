@@ -20,7 +20,6 @@ path = "src/main.rs"
 clap = { version = "4.4", features = ["derive"] }
 futures = "0.3"
 serde_json = "1.0"
-jsonrpsee = { version = "0.22", features = ["server"] }
 
 # Substrate client
 sc-cli.workspace = true
@@ -36,22 +35,28 @@ sc-service.workspace = true
 sc-telemetry.workspace = true
 sc-transaction-pool.workspace = true
 sc-transaction-pool-api.workspace = true
-sc-basic-authorship = { version = "0.32.0" }
-
-# RPC (polkadot-sdk 1.9.0)
-substrate-frame-rpc-system = { version = "26.0.0" }
-pallet-transaction-payment-rpc = { version = "28.0.0" }
 
 # Substrate primitives
 sp-api.workspace = true
 sp-block-builder.workspace = true
+sp-blockchain = { version = "28.0.0" }
 sp-consensus-aura.workspace = true
 sp-consensus-grandpa.workspace = true
 sp-core.workspace = true
 sp-inherents.workspace = true
 sp-io.workspace = true
 sp-runtime.workspace = true
-sp-timestamp = { version = "24.0.0" }
+sp-timestamp = { version = "26.0.0" }
+
+# RPC dependencies
+jsonrpsee = { version = "0.22", features = ["server"] }
+pallet-transaction-payment-rpc = { version = "30.0.0" }
+substrate-frame-rpc-system = { version = "28.0.0" }
+frame-system-rpc-runtime-api = { version = "26.0.0" }
+pallet-transaction-payment-rpc-runtime-api = { version = "28.0.0" }
+
+# Logging
+log = "0.4"
 
 # Local runtime
 ared-edge-runtime = { path = "../runtime" }

@@ -1,11 +1,7 @@
-//! Build script for ARED Edge Runtime.
+//! ARED Edge Runtime Build Script
 //!
-//! This script compiles the runtime to WASM for on-chain execution.
+//! This build script compiles the runtime to WASM using substrate-wasm-builder.
 
 fn main() {
-    substrate_wasm_builder::WasmBuilder::new()
-        .with_current_project()
-        .export_heap_base()
-        .import_memory()
-        .build();
+    substrate_wasm_builder::WasmBuilder::build_using_defaults();
 }

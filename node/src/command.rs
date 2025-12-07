@@ -1,10 +1,11 @@
-//! Command handling for ARED Edge node CLI.
+//! ARED Edge Node Command Handler
 //!
-//! This module processes CLI subcommands and runs the appropriate actions.
+//! Processes CLI commands and starts the appropriate node mode.
 
-use crate::{chain_spec, cli::Cli, service};
+use crate::chain_spec;
+use crate::cli::{Cli, Subcommand};
+use crate::service;
 use sc_cli::SubstrateCli;
-use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
@@ -33,9 +34,9 @@ impl SubstrateCli for Cli {
 
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         Ok(match id {
-            "dev" => Box::new(chain_spec::development_config()?),
-            "local" | "" => Box::new(chain_spec::local_testnet_config()?),
-            "production" | "mainnet" => Box::new(chain_spec::production_config()?),
+            "dev" | "development" => Box::new(chain_spec::development_config()?),
+            "local" | "local_testnet" => Box::new(chain_spec::local_testnet_config()?),
+            "" | "prod" | "production" => Box::new(chain_spec::production_config()?),
             path => Box::new(chain_spec::ChainSpec::from_json_file(
                 std::path::PathBuf::from(path),
             )?),
@@ -43,73 +44,85 @@ impl SubstrateCli for Cli {
     }
 }
 
-/// Parse and run command line arguments.
+/// Run the CLI.
 pub fn run() -> sc_cli::Result<()> {
     let cli = Cli::from_args();
 
     match &cli.subcommand {
-        Some(crate::cli::Subcommand::BuildSpec(cmd)) => {
+        Some(Subcommand::BuildSpec(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
         }
-        Some(crate::cli::Subcommand::CheckBlock(cmd)) => {
+        Some(Subcommand::CheckBlock(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|config| {
-                let PartialComponents { client, task_manager, import_queue, .. } =
-                    service::new_partial(&config)?;
-                Ok((cmd.run(client, import_queue), task_manager))
+                let partial = service::new_partial(&config)?;
+                Ok((cmd.run(partial.client, partial.import_queue), partial.task_manager))
             })
         }
-        Some(crate::cli::Subcommand::ExportBlocks(cmd)) => {
+        Some(Subcommand::ExportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|config| {
-                let PartialComponents { client, task_manager, .. } = service::new_partial(&config)?;
-                Ok((cmd.run(client, config.database), task_manager))
+                let partial = service::new_partial(&config)?;
+                Ok((cmd.run(partial.client, config.database), partial.task_manager))
             })
         }
-        Some(crate::cli::Subcommand::ExportState(cmd)) => {
+        Some(Subcommand::ExportState(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|config| {
-                let PartialComponents { client, task_manager, .. } = service::new_partial(&config)?;
-                Ok((cmd.run(client, config.chain_spec), task_manager))
+                let partial = service::new_partial(&config)?;
+                Ok((cmd.run(partial.client, config.chain_spec), partial.task_manager))
             })
         }
-        Some(crate::cli::Subcommand::ImportBlocks(cmd)) => {
+        Some(Subcommand::ImportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|config| {
-                let PartialComponents { client, task_manager, import_queue, .. } =
-                    service::new_partial(&config)?;
-                Ok((cmd.run(client, import_queue), task_manager))
+                let partial = service::new_partial(&config)?;
+                Ok((cmd.run(partial.client, partial.import_queue), partial.task_manager))
             })
         }
-        Some(crate::cli::Subcommand::PurgeChain(cmd)) => {
+        Some(Subcommand::PurgeChain(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| cmd.run(config.database))
         }
-        Some(crate::cli::Subcommand::Revert(cmd)) => {
+        Some(Subcommand::Revert(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|config| {
-                let PartialComponents { client, task_manager, backend, .. } =
-                    service::new_partial(&config)?;
-                let aux_revert = Box::new(|client, _, blocks| {
-                    sc_consensus_grandpa::revert(client, blocks)?;
-                    Ok(())
-                });
-                Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
+                let partial = service::new_partial(&config)?;
+                Ok((cmd.run(partial.client, partial.backend, None), partial.task_manager))
             })
-        }
-        Some(crate::cli::Subcommand::Key(cmd)) => cmd.run(&cli),
-        Some(crate::cli::Subcommand::ChainInfo(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            runner.sync_run(|config| cmd.run::<ared_edge_runtime::opaque::Block>(&config))
         }
         #[cfg(feature = "runtime-benchmarks")]
-        Some(crate::cli::Subcommand::Benchmark(cmd)) => {
+        Some(Subcommand::Benchmark(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| {
-                // Handle benchmarking commands
-                Err("Benchmarking not implemented".into())
+                use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
+
+                let partial = service::new_partial(&config)?;
+                match cmd {
+                    BenchmarkCmd::Pallet(cmd) => {
+                        cmd.run::<ared_edge_runtime::Block, ()>(config)
+                    }
+                    BenchmarkCmd::Block(cmd) => cmd.run(partial.client),
+                    BenchmarkCmd::Storage(cmd) => {
+                        cmd.run(partial.client, partial.backend)
+                    }
+                    BenchmarkCmd::Overhead(_) => {
+                        Err("Overhead benchmarking not supported".into())
+                    }
+                    BenchmarkCmd::Extrinsic(_) => {
+                        Err("Extrinsic benchmarking not supported".into())
+                    }
+                    BenchmarkCmd::Machine(cmd) => {
+                        cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())
+                    }
+                }
             })
+        }
+        Some(Subcommand::Key(cmd)) => cmd.run(&cli),
+        Some(Subcommand::ChainInfo(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.sync_run(|config| cmd.run::<ared_edge_runtime::opaque::Block>(&config))
         }
         None => {
             let runner = cli.create_runner(&cli.run)?;

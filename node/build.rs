@@ -1,6 +1,6 @@
-//! Build script for ARED Edge Node.
+//! ARED Edge Node Build Script
 //!
-//! This script embeds build information into the node binary.
+//! Sets the SUBSTRATE_CLI_IMPL_VERSION environment variable for the node binary.
 
 fn main() {
     substrate_build_script_utils::generate_cargo_keys();

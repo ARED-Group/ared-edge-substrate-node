@@ -1,15 +1,14 @@
-//! RPC interface for ARED Edge node.
+//! ARED Edge RPC Configuration
 //!
-//! This module provides JSON-RPC endpoints for external clients
-//! to interact with the blockchain.
+//! Instantiates all RPC extensions for the ARED Edge node.
 
 use std::sync::Arc;
 
 use ared_edge_runtime::{opaque::Block, AccountId, Balance, Nonce};
-use jsonrpsee::RpcModule;
 use sc_transaction_pool_api::TransactionPool;
-
-pub use sc_rpc_api::DenyUnsafe;
+use sp_api::ProvideRuntimeApi;
+use sp_block_builder::BlockBuilder;
+use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
 /// Full client dependencies for RPC.
 pub struct FullDeps<C, P> {
@@ -18,33 +17,33 @@ pub struct FullDeps<C, P> {
     /// Transaction pool instance.
     pub pool: Arc<P>,
     /// Whether to deny unsafe calls.
-    pub deny_unsafe: DenyUnsafe,
+    pub deny_unsafe: sc_rpc::DenyUnsafe,
 }
 
-/// Instantiate all full RPC extensions.
+/// Instantiate all RPC extensions.
 pub fn create_full<C, P>(
     deps: FullDeps<C, P>,
-) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+) -> Result<jsonrpsee::RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
-    C: sp_api::ProvideRuntimeApi<Block>,
-    C: sc_client_api::HeaderBackend<Block> + sc_client_api::AuxStore,
-    C: sc_client_api::BlockchainEvents<Block>,
-    C: Send + Sync + 'static,
-    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-    C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-    C::Api: sp_block_builder::BlockBuilder<Block>,
-    P: TransactionPool + 'static,
+    C: ProvideRuntimeApi<Block>
+        + HeaderBackend<Block>
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + Send
+        + Sync
+        + 'static,
+    C::Api: sp_api::Metadata<Block>
+        + sp_block_builder::BlockBuilder<Block>
+        + frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce>
+        + pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>,
+    P: TransactionPool + Sync + Send + 'static,
 {
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
     use substrate_frame_rpc_system::{System, SystemApiServer};
 
-    let mut module = RpcModule::new(());
+    let mut module = jsonrpsee::RpcModule::new(());
     let FullDeps { client, pool, deny_unsafe } = deps;
 
-    // System RPC (account nonce, etc.)
     module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
-
-    // Transaction payment RPC
     module.merge(TransactionPayment::new(client).into_rpc())?;
 
     Ok(module)
