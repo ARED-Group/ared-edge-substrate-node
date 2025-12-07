@@ -48,10 +48,10 @@ sp-io.workspace = true
 sp-runtime.workspace = true
 sp-timestamp = { version = "37.0.0" }
 
-# RPC dependencies (SDK stable2409)
+# RPC dependencies
 jsonrpsee = { version = "0.24", features = ["server"] }
-pallet-transaction-payment-rpc = { version = "42.0.0" }
-substrate-frame-rpc-system = { version = "40.0.0" }
+pallet-transaction-payment-rpc = { version = "45" }
+substrate-frame-rpc-system = { version = "45" }
 frame-system-rpc-runtime-api = { version = "38.0.0" }
 pallet-transaction-payment-rpc-runtime-api = { version = "42.0.0" }
 

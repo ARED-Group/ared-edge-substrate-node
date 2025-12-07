@@ -66,9 +66,9 @@ sc-telemetry = { version = "25.0.0" }
 sc-transaction-pool = { version = "39.0.0" }
 sc-transaction-pool-api = { version = "39.0.0" }
 
-# Build dependencies (SDK stable2409)
-substrate-build-script-utils = { version = "12.0.0" }
-substrate-wasm-builder = { version = "25.0.0" }
+# Build dependencies
+substrate-build-script-utils = { version = "11.0.0" }
+substrate-wasm-builder = { version = "24.0.0" }
 
 # Local pallets
 pallet-carbon-credits = { path = "pallets/carbon-credits", default-features = false }
