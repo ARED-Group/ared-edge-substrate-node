@@ -22,30 +22,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Add WASM target
-RUN rustup target add wasm32-unknown-unknown
+# Add WASM target for Rust 1.84+ (wasm32v1-none provides built-in panic handler)
+# wasm32v1-none is the official target for Substrate runtimes with polkadot-stable2503
+RUN rustup target add wasm32v1-none && \
+    rustup component add rust-src
 
 WORKDIR /build
 
-# Copy manifests first for better layer caching
+# Copy manifests and build scripts first for better layer caching
 COPY Cargo.toml ./
-COPY node/Cargo.toml ./node/
-COPY runtime/Cargo.toml ./runtime/
+COPY node/Cargo.toml node/build.rs ./node/
+COPY runtime/Cargo.toml runtime/build.rs ./runtime/
 COPY pallets/ ./pallets/
 
 # Create dummy source files for dependency compilation
 RUN mkdir -p node/src runtime/src && \
     echo "fn main() {}" > node/src/main.rs && \
-    echo "" > runtime/src/lib.rs
+    echo "#![cfg_attr(not(feature = \"std\"), no_std)]" > runtime/src/lib.rs
 
 # Build dependencies only (this layer will be cached)
 RUN cargo build --release --package ared-edge-node || true
 
 # Copy actual source code
 COPY . .
-
-# Pin transitive dependencies requiring newer Rust to compatible versions
-RUN cargo update home@0.5.12 --precise 0.5.9 2>/dev/null || true
 
 # Build the actual binary
 RUN cargo build --release --package ared-edge-node
