@@ -53,78 +53,17 @@ pub fn run() -> sc_cli::Result<()> {
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
         }
-        Some(Subcommand::CheckBlock(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let partial = service::new_partial(&config)?;
-                Ok((cmd.run(partial.client, partial.import_queue), partial.task_manager))
-            })
-        }
-        Some(Subcommand::ExportBlocks(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let partial = service::new_partial(&config)?;
-                Ok((cmd.run(partial.client, config.database), partial.task_manager))
-            })
-        }
-        Some(Subcommand::ExportState(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let partial = service::new_partial(&config)?;
-                Ok((cmd.run(partial.client, config.chain_spec), partial.task_manager))
-            })
-        }
-        Some(Subcommand::ImportBlocks(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let partial = service::new_partial(&config)?;
-                Ok((cmd.run(partial.client, partial.import_queue), partial.task_manager))
-            })
-        }
         Some(Subcommand::PurgeChain(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| cmd.run(config.database))
-        }
-        Some(Subcommand::Revert(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let partial = service::new_partial(&config)?;
-                Ok((cmd.run(partial.client, partial.backend, None), partial.task_manager))
-            })
-        }
-        #[cfg(feature = "runtime-benchmarks")]
-        Some(Subcommand::Benchmark(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            runner.sync_run(|config| {
-                use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-
-                let partial = service::new_partial(&config)?;
-                match cmd {
-                    BenchmarkCmd::Pallet(cmd) => {
-                        cmd.run::<ared_edge_runtime::Block, ()>(config)
-                    }
-                    BenchmarkCmd::Block(cmd) => cmd.run(partial.client),
-                    BenchmarkCmd::Storage(cmd) => {
-                        cmd.run(partial.client, partial.backend)
-                    }
-                    BenchmarkCmd::Overhead(_) => {
-                        Err("Overhead benchmarking not supported".into())
-                    }
-                    BenchmarkCmd::Extrinsic(_) => {
-                        Err("Extrinsic benchmarking not supported".into())
-                    }
-                    BenchmarkCmd::Machine(cmd) => {
-                        cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())
-                    }
-                }
-            })
         }
         Some(Subcommand::Key(cmd)) => cmd.run(&cli),
         Some(Subcommand::ChainInfo(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| cmd.run::<ared_edge_runtime::opaque::Block>(&config))
         }
-        None => {
+        _ => {
+            // Default: run the full node
             let runner = cli.create_runner(&cli.run)?;
             runner.run_node_until_exit(|config| async move {
                 service::new_full(config).map_err(sc_cli::Error::Service)
