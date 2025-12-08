@@ -8,18 +8,6 @@
 
 extern crate alloc;
 
-// Provide panic handler for WASM no_std builds
-#[cfg(all(not(feature = "std"), target_arch = "wasm32"))]
-#[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    core::arch::wasm32::unreachable()
-}
-
-// Provide global allocator for WASM no_std builds
-#[cfg(all(not(feature = "std"), target_arch = "wasm32"))]
-#[global_allocator]
-static ALLOCATOR: sp_core::alloc::WasmAllocator = sp_core::alloc::WasmAllocator;
-
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
