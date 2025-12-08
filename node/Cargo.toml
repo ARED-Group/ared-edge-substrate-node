@@ -39,23 +39,23 @@ sc-transaction-pool-api.workspace = true
 # Substrate primitives (from polkadot-sdk stable2409)
 sp-api.workspace = true
 sp-block-builder.workspace = true
-sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2412" }
+sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2" }
 sp-consensus-aura.workspace = true
 sp-consensus-grandpa.workspace = true
 sp-core.workspace = true
-sp-genesis-builder = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2412" }
+sp-genesis-builder = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2" }
 sp-inherents.workspace = true
 sp-io.workspace = true
-sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2412" }
+sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2" }
 sp-runtime.workspace = true
-sp-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2412" }
+sp-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2" }
 
 # RPC dependencies (from polkadot-sdk stable2409)
 jsonrpsee = { version = "0.23", features = ["server"] }
-pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2412" }
-substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2412" }
-frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2412" }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2412" }
+pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2" }
+substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2" }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2" }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2" }
 
 # Logging
 log = "0.4"
