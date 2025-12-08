@@ -28,7 +28,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use serde_json::json;
 
 /// Specialized `ChainSpec` for ARED Edge network.
-pub type ChainSpec = sc_service::GenericChainSpec<()>;
+pub type ChainSpec = sc_service::GenericChainSpec;
 
 /// The type for account identifiers.
 pub type AccountId = <<sp_runtime::MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
