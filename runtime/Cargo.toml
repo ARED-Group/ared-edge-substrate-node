@@ -31,18 +31,20 @@ pallet-timestamp.workspace = true
 pallet-transaction-payment.workspace = true
 pallet-sudo.workspace = true
 
-# Consensus (from polkadot-sdk stable2409)
-pallet-aura = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2", default-features = false }
-pallet-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2", default-features = false }
+# Consensus pallets
+pallet-aura = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503", default-features = false }
+pallet-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503", default-features = false }
 
 # SP
 sp-api.workspace = true
+sp-arithmetic.workspace = true
 sp-block-builder.workspace = true
+sp-io.workspace = true
 sp-consensus-aura.workspace = true
 sp-consensus-grandpa.workspace = true
 sp-core.workspace = true
-sp-genesis-builder = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2", default-features = false }
-sp-storage = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2", default-features = false }
+sp-genesis-builder = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503", default-features = false }
+sp-storage = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503", default-features = false }
 sp-inherents.workspace = true
 sp-offchain.workspace = true
 sp-runtime.workspace = true
@@ -51,9 +53,9 @@ sp-std.workspace = true
 sp-transaction-pool.workspace = true
 sp-version.workspace = true
 
-# RPC runtime APIs (from polkadot-sdk stable2409)
-frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2", default-features = false }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2407-2", default-features = false }
+# RPC runtime APIs
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503", default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503", default-features = false }
 
 # Local pallets
 pallet-carbon-credits.workspace = true
@@ -76,10 +78,12 @@ std = [
     "pallet-aura/std",
     "pallet-grandpa/std",
     "sp-api/std",
+    "sp-arithmetic/std",
     "sp-block-builder/std",
     "sp-consensus-aura/std",
     "sp-consensus-grandpa/std",
     "sp-core/std",
+    "sp-io/std",
     "sp-genesis-builder/std",
     "sp-inherents/std",
     "sp-offchain/std",

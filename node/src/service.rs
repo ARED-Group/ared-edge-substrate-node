@@ -92,7 +92,7 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
         sc_network::NetworkWorker<Block, <Block as sp_runtime::traits::Block>::Hash>,
     >::new(&config.network);
 
-    let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
+    let (network, system_rpc_tx, tx_handler_controller, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
             net_config,
@@ -101,8 +101,9 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: None,
-            warp_sync_params: None,
+            warp_sync_config: None,
             block_relay: None,
+            metrics: sc_network::config::MetricConfig::Disabled,
         })?;
 
     let role = config.role.clone();
@@ -140,6 +141,5 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
         log::info!("Node is running as authority");
     }
 
-    network_starter.start_network();
     Ok(task_manager)
 }
