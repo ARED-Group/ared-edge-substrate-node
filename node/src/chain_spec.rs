@@ -132,12 +132,12 @@ pub fn production_config() -> Result<ChainSpec, String> {
 }
 
 /// Chain properties for wallet and explorer integration.
-fn chain_properties() -> serde_json::Value {
-    json!({
-        "tokenSymbol": "ARED",
-        "tokenDecimals": 18,
-        "ss58Format": 42
-    })
+fn chain_properties() -> serde_json::Map<String, serde_json::Value> {
+    let mut properties = serde_json::Map::new();
+    properties.insert("tokenSymbol".into(), "ARED".into());
+    properties.insert("tokenDecimals".into(), 18.into());
+    properties.insert("ss58Format".into(), 42.into());
+    properties
 }
 
 /// Genesis configuration for development network.

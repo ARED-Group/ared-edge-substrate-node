@@ -48,9 +48,8 @@ pub fn new_partial(config: &Configuration) -> Result<
 
     let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
-    let transaction_pool = sc_transaction_pool::BasicPool::new_full(
-        sc_transaction_pool::Options::default()
-            .with_txpool_config(config.transaction_pool.clone()),
+    let transaction_pool = sc_transaction_pool::TransactionPoolHandle::new(
+        config.transaction_pool.clone(),
         config.role.is_authority().into(),
         config.prometheus_registry(),
         task_manager.spawn_essential_handle(),
