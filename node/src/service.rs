@@ -32,7 +32,7 @@ pub fn new_partial(config: &Configuration) -> Result<
         })
         .transpose()?;
 
-    let executor = sc_service::new_wasm_executor::<sp_io::SubstrateHostFunctions>(config);
+    let executor = sc_service::new_wasm_executor::<sp_io::SubstrateHostFunctions>(&config.executor);
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts::<Block, RuntimeApi, _>(
             config,
@@ -49,8 +49,10 @@ pub fn new_partial(config: &Configuration) -> Result<
     let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
     let transaction_pool = sc_transaction_pool::BasicPool::new_full(
-        config.transaction_pool.clone(),
-        config.role.is_authority().into(),
+        sc_transaction_pool::Options {
+            options: config.transaction_pool.clone(),
+            is_validator: config.role.is_authority(),
+        },
         config.prometheus_registry(),
         task_manager.spawn_essential_handle(),
         client.clone(),
@@ -116,7 +118,6 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
             let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: pool.clone(),
-                deny_unsafe: sc_rpc::DenyUnsafe::No,
             };
             crate::rpc::create_full(deps).map_err(Into::into)
         })

@@ -16,8 +16,6 @@ pub struct FullDeps<C, P> {
     pub client: Arc<C>,
     /// Transaction pool instance.
     pub pool: Arc<P>,
-    /// Whether to deny unsafe calls.
-    pub deny_unsafe: sc_rpc::DenyUnsafe,
 }
 
 /// Instantiate all RPC extensions.
@@ -41,9 +39,9 @@ where
     use substrate_frame_rpc_system::{System, SystemApiServer};
 
     let mut module = jsonrpsee::RpcModule::new(());
-    let FullDeps { client, pool, deny_unsafe } = deps;
+    let FullDeps { client, pool } = deps;
 
-    module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
+    module.merge(System::new(client.clone(), pool).into_rpc())?;
     module.merge(TransactionPayment::new(client).into_rpc())?;
 
     Ok(module)
