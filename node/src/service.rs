@@ -90,7 +90,7 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
         Block,
         <Block as sp_runtime::traits::Block>::Hash,
         sc_network::NetworkWorker<Block, <Block as sp_runtime::traits::Block>::Hash>,
-    >::new(&config.network);
+    >::new(&config.network, config.prometheus_registry().cloned());
 
     let (network, system_rpc_tx, tx_handler_controller, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
@@ -112,11 +112,11 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
     let rpc_extensions_builder = {
         let client = client.clone();
         let pool = transaction_pool.clone();
-        Box::new(move |deny_unsafe, _| {
+        Box::new(move |_| {
             let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: pool.clone(),
-                deny_unsafe,
+                deny_unsafe: sc_rpc::DenyUnsafe::No,
             };
             crate::rpc::create_full(deps).map_err(Into::into)
         })
