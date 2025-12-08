@@ -4,10 +4,14 @@
 //! telemetry proofs, carbon calculations, and device management.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(alloc_error_handler))]
 #![recursion_limit = "256"]
 
-// Make the WASM binary available
+extern crate alloc;
+
+// Include sp_io which provides the panic handler for WASM builds
+#[cfg(not(feature = "std"))]
+use sp_io as _;
+
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
@@ -16,11 +20,12 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
+    generic, impl_opaque_keys,
     traits::{BlakeTwo256, Block as BlockT, IdentifyAccount, Verify},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, MultiSignature,
+    ApplyExtrinsicResult, ExtrinsicInclusionMode, MultiSignature,
 };
+use alloc::borrow::Cow;
 use sp_std::prelude::*;
 use sp_version::RuntimeVersion;
 
@@ -29,9 +34,9 @@ use frame_support::{
     construct_runtime, derive_impl,
     weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
 };
-use frame_system::EnsureRoot;
 use pallet_grandpa::AuthorityList as GrandpaAuthorityList;
-use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter};
+use pallet_transaction_payment::FungibleAdapter;
+use sp_arithmetic::FixedU128;
 
 /// Alias for account ID type
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
@@ -109,14 +114,14 @@ pub mod opaque {
 /// Runtime version
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("ared-edge"),
-    impl_name: create_runtime_str!("ared-edge-node"),
+    spec_name: Cow::Borrowed("ared-edge"),
+    impl_name: Cow::Borrowed("ared-edge-node"),
     authoring_version: 1,
     spec_version: 100,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
-    state_version: 1,
+    system_version: 1,
 };
 
 /// Maximum block weight
@@ -166,6 +171,7 @@ impl pallet_aura::Config for Runtime {
     type DisabledValidators = ();
     type MaxAuthorities = frame_support::traits::ConstU32<32>;
     type AllowMultipleBlocksPerSlot = frame_support::traits::ConstBool<false>;
+    type SlotDuration = pallet_aura::MinimumPeriodTimesTwo<Runtime>;
 }
 
 // Grandpa finality configuration
@@ -194,16 +200,26 @@ impl pallet_balances::Config for Runtime {
     type RuntimeFreezeReason = ();
     type FreezeIdentifier = ();
     type MaxFreezes = ();
+    type DoneSlashHandler = ();
+}
+
+/// Constant fee multiplier for transaction payment
+pub struct ConstantFeeMultiplier;
+impl frame_support::traits::Get<FixedU128> for ConstantFeeMultiplier {
+    fn get() -> FixedU128 {
+        FixedU128::from_u32(1)
+    }
 }
 
 // Transaction payment configuration
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+    type OnChargeTransaction = FungibleAdapter<Balances, ()>;
     type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
     type WeightToFee = frame_support::weights::IdentityFee<Balance>;
     type LengthToFee = frame_support::weights::IdentityFee<Balance>;
-    type FeeMultiplierUpdate = ConstFeeMultiplier<frame_support::traits::ConstU128<1>>;
+    type FeeMultiplierUpdate = pallet_transaction_payment::ConstFeeMultiplier<ConstantFeeMultiplier>;
+    type WeightInfo = pallet_transaction_payment::weights::SubstrateWeight<Runtime>;
 }
 
 // Sudo pallet configuration (for development)
@@ -279,7 +295,7 @@ impl_runtime_apis! {
             Executive::execute_block(block);
         }
 
-        fn initialize_block(header: &<Block as BlockT>::Header) {
+        fn initialize_block(header: &<Block as BlockT>::Header) -> ExtrinsicInclusionMode {
             Executive::initialize_block(header)
         }
     }
@@ -341,7 +357,7 @@ impl_runtime_apis! {
         }
 
         fn authorities() -> Vec<AuraId> {
-            Aura::authorities().into_inner()
+            pallet_aura::Authorities::<Runtime>::get().into_inner()
         }
     }
 
@@ -415,12 +431,16 @@ impl_runtime_apis! {
     }
 
     impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
-        fn create_default_config() -> Vec<u8> {
-            frame_support::genesis_builder_helper::create_default_config::<RuntimeGenesisConfig>()
+        fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
+            frame_support::genesis_builder_helper::build_state::<RuntimeGenesisConfig>(config)
         }
 
-        fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
-            frame_support::genesis_builder_helper::build_config::<RuntimeGenesisConfig>(config)
+        fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
+            frame_support::genesis_builder_helper::get_preset::<RuntimeGenesisConfig>(id, |_| None)
+        }
+
+        fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
+            vec![]
         }
     }
 }
