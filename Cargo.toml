@@ -21,7 +21,7 @@ repository = "https://github.com/ared/ared-edge-substrate-node"
 [workspace.dependencies]
 # Substrate dependencies from polkadot-sdk stable2409 tag
 # Using git dependencies ensures all crates are from the same compatible commit
-codec = { package = "parity-scale-codec", version = "=3.6.12", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
 scale-info = { version = "2.11", default-features = false, features = ["derive"] }
 
 # Frame dependencies (from polkadot-sdk stable2409)
@@ -74,11 +74,12 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", t
 pallet-carbon-credits = { path = "pallets/carbon-credits", default-features = false }
 pallet-telemetry-proofs = { path = "pallets/telemetry-proofs", default-features = false }
 
-# Force parity-scale-codec to 3.6.6 to avoid stricter enum validation in 3.7.x
-# The 3.7.x versions added compile-time enum index validation that triggers a bug in sc-network
+# Patch parity-scale-codec to v3.6.12 to avoid stricter enum validation in 3.7.x
+# The 3.7.x derive macro added compile-time enum index validation that triggers
+# a pre-existing bug in sc-network's GenericMessage enum (duplicate index 6)
 [patch.crates-io]
-parity-scale-codec = "=3.6.12"
-parity-scale-codec-derive = "=3.6.12"
+parity-scale-codec = { git = "https://github.com/paritytech/parity-scale-codec", tag = "v3.6.12" }
+parity-scale-codec-derive = { git = "https://github.com/paritytech/parity-scale-codec", tag = "v3.6.12" }
 
 [profile.release]
 panic = "unwind"
