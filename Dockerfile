@@ -2,7 +2,7 @@
 # ARED Edge Substrate Node - Dockerfile
 # =============================================================================
 # Multi-stage build for Substrate blockchain node
-# Uses Rust 1.85 with wasm32-unknown-unknown target
+# Uses Rust 1.85 with wasm32v1-none target (required for Rust 1.84+)
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -23,8 +23,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Add WASM target
-RUN rustup target add wasm32-unknown-unknown
+# Add WASM target (wasm32v1-none for Rust 1.84+ with panic handler from sp_io)
+RUN rustup target add wasm32v1-none
 
 WORKDIR /build
 
