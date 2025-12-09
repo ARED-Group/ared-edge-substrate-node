@@ -2,13 +2,13 @@
 # ARED Edge Substrate Node - Dockerfile
 # =============================================================================
 # Multi-stage build for Substrate blockchain node
-# Uses Rust 1.84.1 (officially tested version for polkadot-stable2503)
+# Uses Rust 1.85 with wasm32-unknown-unknown target
 # =============================================================================
 
 # -----------------------------------------------------------------------------
 # Build Stage
 # -----------------------------------------------------------------------------
-FROM rust:1.84-slim-bookworm AS builder
+FROM rust:1.85-slim-bookworm AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Add WASM target (standard target for Rust 1.84)
+# Add WASM target
 RUN rustup target add wasm32-unknown-unknown
 
 WORKDIR /build

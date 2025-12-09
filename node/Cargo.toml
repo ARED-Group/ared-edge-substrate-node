@@ -1,8 +1,6 @@
 # =============================================================================
 # ARED Edge Substrate Node - Node Binary
 # =============================================================================
-# Node configuration matching official Polkadot SDK solochain template
-# =============================================================================
 
 [package]
 name = "ared-edge-node"
