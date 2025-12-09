@@ -1,15 +1,14 @@
 //! ARED Edge Runtime Build Script
 //!
-//! This build script compiles the runtime to WASM using substrate-wasm-builder.
+//! Compiles the runtime to WASM using substrate-wasm-builder.
+//! Uses the same configuration as the official Polkadot SDK solochain template.
 
 #[cfg(feature = "std")]
 fn main() {
-    substrate_wasm_builder::WasmBuilder::new()
-        .with_current_project()
-        .export_heap_base()
-        .import_memory()
-        .build();
+    substrate_wasm_builder::WasmBuilder::build_using_defaults();
 }
 
+/// The wasm builder is deactivated when compiling
+/// this crate for wasm to speed up the compilation.
 #[cfg(not(feature = "std"))]
 fn main() {}
