@@ -20,6 +20,7 @@
 //! - Initial validator set
 //! - Pallet configurations
 
+use ared_edge_runtime::WASM_BINARY;
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
@@ -78,7 +79,7 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 /// - Pre-funded development accounts
 pub fn development_config() -> Result<ChainSpec, String> {
     Ok(ChainSpec::builder(
-        &[],
+        WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?,
         None,
     )
     .with_name("ARED Edge Development")
@@ -98,7 +99,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 /// - Pre-funded test accounts
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
     Ok(ChainSpec::builder(
-        &[],
+        WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?,
         None,
     )
     .with_name("ARED Edge Local Testnet")
@@ -119,7 +120,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 /// - Production-ready parameters
 pub fn production_config() -> Result<ChainSpec, String> {
     Ok(ChainSpec::builder(
-        &[],
+        WASM_BINARY.ok_or_else(|| "Production wasm not available".to_string())?,
         None,
     )
     .with_name("ARED Edge Mainnet")

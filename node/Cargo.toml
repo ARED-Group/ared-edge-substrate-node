@@ -1,15 +1,23 @@
 # =============================================================================
-# ARED Edge Substrate Node - Node Binary
+# ARED Edge Node
+# =============================================================================
+# Uses exact configuration from official polkadot-sdk-solochain-template
 # =============================================================================
 
 [package]
 name = "ared-edge-node"
-version.workspace = true
-authors.workspace = true
-edition.workspace = true
-license.workspace = true
-description = "ARED Edge private blockchain node"
+description = "ARED Edge private blockchain node for IoT telemetry proofs"
+version = "1.0.0"
+license = "MIT"
+authors = ["ARED Team <engineering@a-r-e-d.com>"]
+homepage = "https://a-r-e-d.com"
+repository = "https://github.com/ared/ared-edge-substrate-node"
+edition = "2021"
+publish = false
 build = "build.rs"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [[bin]]
 name = "ared-edge-node"
@@ -17,53 +25,70 @@ path = "src/main.rs"
 
 [dependencies]
 # CLI and utilities
-clap.workspace = true
-futures.workspace = true
-serde_json = "1.0"
+clap = { features = ["derive"], workspace = true }
+futures = { features = ["thread-pool"], workspace = true }
+jsonrpsee = { features = ["server"], workspace = true }
 log.workspace = true
+serde_json.workspace = true
+
+# Frame dependencies (node-side with std)
+frame-benchmarking-cli = { default-features = true, workspace = true }
+frame-metadata-hash-extension = { default-features = true, workspace = true }
+frame-system = { default-features = true, workspace = true }
+pallet-transaction-payment = { default-features = true, workspace = true }
+pallet-transaction-payment-rpc = { default-features = true, workspace = true }
 
 # Substrate client
-sc-cli.workspace = true
-sc-client-api.workspace = true
-sc-consensus.workspace = true
-sc-consensus-aura.workspace = true
-sc-consensus-grandpa.workspace = true
-sc-executor.workspace = true
-sc-network.workspace = true
-sc-service.workspace = true
-sc-offchain.workspace = true
-sc-basic-authorship.workspace = true
-sc-telemetry.workspace = true
-sc-transaction-pool.workspace = true
-sc-transaction-pool-api.workspace = true
+sc-basic-authorship = { default-features = true, workspace = true }
+sc-cli = { default-features = true, workspace = true }
+sc-client-api = { default-features = true, workspace = true }
+sc-consensus = { default-features = true, workspace = true }
+sc-consensus-aura = { default-features = true, workspace = true }
+sc-consensus-grandpa = { default-features = true, workspace = true }
+sc-executor = { default-features = true, workspace = true }
+sc-network = { default-features = true, workspace = true }
+sc-offchain = { default-features = true, workspace = true }
+sc-service = { default-features = true, workspace = true }
+sc-telemetry = { default-features = true, workspace = true }
+sc-transaction-pool = { default-features = true, workspace = true }
+sc-transaction-pool-api = { default-features = true, workspace = true }
 
 # Substrate primitives
-sp-api.workspace = true
-sp-block-builder.workspace = true
-sp-blockchain.workspace = true
-sp-consensus-aura.workspace = true
-sp-consensus-grandpa.workspace = true
-sp-core.workspace = true
-sp-genesis-builder.workspace = true
-sp-inherents.workspace = true
-sp-io.workspace = true
-sp-keyring.workspace = true
-sp-runtime.workspace = true
-sp-timestamp.workspace = true
+sp-api = { default-features = true, workspace = true }
+sp-block-builder = { default-features = true, workspace = true }
+sp-blockchain = { default-features = true, workspace = true }
+sp-consensus-aura = { default-features = true, workspace = true }
+sp-core = { default-features = true, workspace = true }
+sp-genesis-builder = { default-features = true, workspace = true }
+sp-inherents = { default-features = true, workspace = true }
+sp-io = { default-features = true, workspace = true }
+sp-keyring = { default-features = true, workspace = true }
+sp-runtime = { default-features = true, workspace = true }
+sp-timestamp = { default-features = true, workspace = true }
 
-# RPC dependencies
-jsonrpsee.workspace = true
-pallet-transaction-payment-rpc.workspace = true
-substrate-frame-rpc-system.workspace = true
-frame-system-rpc-runtime-api.workspace = true
-pallet-transaction-payment-rpc-runtime-api.workspace = true
+# RPC
+substrate-frame-rpc-system = { default-features = true, workspace = true }
 
 # Local runtime
-ared-edge-runtime = { path = "../runtime" }
+ared-edge-runtime.workspace = true
 
 [build-dependencies]
-substrate-build-script-utils.workspace = true
+substrate-build-script-utils = { default-features = true, workspace = true }
 
 [features]
-default = []
-runtime-benchmarks = ["ared-edge-runtime/runtime-benchmarks"]
+default = ["std"]
+std = ["ared-edge-runtime/std"]
+runtime-benchmarks = [
+    "frame-benchmarking-cli/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+    "pallet-transaction-payment/runtime-benchmarks",
+    "sc-service/runtime-benchmarks",
+    "ared-edge-runtime/runtime-benchmarks",
+    "sp-runtime/runtime-benchmarks",
+]
+try-runtime = [
+    "frame-system/try-runtime",
+    "pallet-transaction-payment/try-runtime",
+    "ared-edge-runtime/try-runtime",
+    "sp-runtime/try-runtime",
+]

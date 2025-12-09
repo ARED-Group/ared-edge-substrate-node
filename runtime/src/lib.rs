@@ -77,8 +77,8 @@ pub type Executive = frame_executive::Executive<
     AllPalletsWithSystem,
 >;
 
-/// Signed extras for transactions
-pub type SignedExtra = (
+/// The `TransactionExtension` to the basic transaction logic.
+pub type TxExtension = (
     frame_system::CheckNonZeroSender<Runtime>,
     frame_system::CheckSpecVersion<Runtime>,
     frame_system::CheckTxVersion<Runtime>,
@@ -87,7 +87,11 @@ pub type SignedExtra = (
     frame_system::CheckNonce<Runtime>,
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+    frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 );
+
+/// Signed extras for transactions (alias for backward compatibility)
+pub type SignedExtra = TxExtension;
 
 /// Opaque types for light client
 pub mod opaque {

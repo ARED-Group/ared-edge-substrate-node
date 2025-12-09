@@ -3,7 +3,14 @@
 //! Compiles the runtime to WASM using substrate-wasm-builder.
 //! Uses the same configuration as the official Polkadot SDK solochain template.
 
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", feature = "metadata-hash"))]
+fn main() {
+    substrate_wasm_builder::WasmBuilder::init_with_defaults()
+        .enable_metadata_hash("ARED", 18)
+        .build();
+}
+
+#[cfg(all(feature = "std", not(feature = "metadata-hash")))]
 fn main() {
     substrate_wasm_builder::WasmBuilder::build_using_defaults();
 }

@@ -1,93 +1,97 @@
 # =============================================================================
-# ARED Edge Substrate Node - Runtime
+# ARED Edge Runtime
+# =============================================================================
+# Uses exact configuration from official polkadot-sdk-solochain-template
 # =============================================================================
 
 [package]
 name = "ared-edge-runtime"
-version.workspace = true
-authors.workspace = true
-edition.workspace = true
-license.workspace = true
-description = "ARED Edge private blockchain runtime"
+description = "ARED Edge private blockchain runtime for IoT telemetry proofs"
+version = "1.0.0"
+license = "MIT"
+authors = ["ARED Team <engineering@a-r-e-d.com>"]
+homepage = "https://a-r-e-d.com"
+repository = "https://github.com/ared/ared-edge-substrate-node"
+edition = "2021"
+publish = false
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
-[build-dependencies]
-substrate-wasm-builder = { workspace = true, optional = true, default-features = true }
-
 [dependencies]
-# Codec and serialization
-codec.workspace = true
-scale-info.workspace = true
-serde_json = { workspace = true, default-features = false, features = ["alloc"] }
-
-# Frame dependencies
-frame-support = { workspace = true, features = ["experimental"] }
-frame-system.workspace = true
+codec = { features = ["derive"], workspace = true }
+frame-benchmarking = { optional = true, workspace = true }
 frame-executive.workspace = true
+frame-metadata-hash-extension.workspace = true
+frame-support = { features = ["experimental"], workspace = true }
+frame-system-benchmarking = { optional = true, workspace = true }
 frame-system-rpc-runtime-api.workspace = true
-frame-benchmarking = { workspace = true, optional = true }
-frame-try-runtime = { workspace = true, optional = true }
-
-# Pallets
-pallet-balances.workspace = true
-pallet-timestamp.workspace = true
-pallet-transaction-payment.workspace = true
-pallet-transaction-payment-rpc-runtime-api.workspace = true
-pallet-sudo.workspace = true
+frame-system.workspace = true
+frame-try-runtime = { optional = true, workspace = true }
+log.workspace = true
 pallet-aura.workspace = true
+pallet-balances.workspace = true
 pallet-grandpa.workspace = true
-
-# SP (Substrate Primitives)
+pallet-sudo.workspace = true
+pallet-timestamp.workspace = true
+pallet-transaction-payment-rpc-runtime-api.workspace = true
+pallet-transaction-payment.workspace = true
+scale-info = { features = ["derive", "serde"], workspace = true }
+serde_json = { workspace = true, default-features = false, features = ["alloc"] }
 sp-api.workspace = true
 sp-arithmetic.workspace = true
 sp-block-builder.workspace = true
-sp-std.workspace = true
-sp-consensus-aura.workspace = true
-sp-consensus-grandpa.workspace = true
-sp-core.workspace = true
+sp-consensus-aura = { features = ["serde"], workspace = true }
+sp-consensus-grandpa = { features = ["serde"], workspace = true }
+sp-core = { features = ["serde"], workspace = true }
 sp-genesis-builder.workspace = true
 sp-inherents.workspace = true
+sp-keyring.workspace = true
 sp-offchain.workspace = true
-sp-runtime.workspace = true
+sp-runtime = { features = ["serde"], workspace = true }
 sp-session.workspace = true
 sp-storage.workspace = true
 sp-transaction-pool.workspace = true
-sp-version.workspace = true
+sp-version = { features = ["serde"], workspace = true }
 
 # Local pallets
 pallet-carbon-credits.workspace = true
 pallet-telemetry-proofs.workspace = true
 
+[build-dependencies]
+substrate-wasm-builder = { optional = true, workspace = true, default-features = true }
+
 [features]
 default = ["std"]
 std = [
     "codec/std",
+    "frame-benchmarking?/std",
+    "frame-executive/std",
+    "frame-metadata-hash-extension/std",
+    "frame-support/std",
+    "frame-system-benchmarking?/std",
+    "frame-system-rpc-runtime-api/std",
+    "frame-system/std",
+    "frame-try-runtime?/std",
+    "log/std",
+    "pallet-aura/std",
+    "pallet-balances/std",
+    "pallet-grandpa/std",
+    "pallet-sudo/std",
+    "pallet-timestamp/std",
+    "pallet-transaction-payment-rpc-runtime-api/std",
+    "pallet-transaction-payment/std",
     "scale-info/std",
     "serde_json/std",
-    "frame-support/std",
-    "frame-system/std",
-    "frame-executive/std",
-    "frame-system-rpc-runtime-api/std",
-    "frame-benchmarking?/std",
-    "frame-try-runtime?/std",
-    "pallet-balances/std",
-    "pallet-timestamp/std",
-    "pallet-transaction-payment/std",
-    "pallet-transaction-payment-rpc-runtime-api/std",
-    "pallet-sudo/std",
-    "pallet-aura/std",
-    "pallet-grandpa/std",
     "sp-api/std",
     "sp-arithmetic/std",
     "sp-block-builder/std",
-    "sp-std/std",
     "sp-consensus-aura/std",
     "sp-consensus-grandpa/std",
     "sp-core/std",
     "sp-genesis-builder/std",
     "sp-inherents/std",
+    "sp-keyring/std",
     "sp-offchain/std",
     "sp-runtime/std",
     "sp-session/std",
@@ -102,11 +106,12 @@ std = [
 runtime-benchmarks = [
     "frame-benchmarking/runtime-benchmarks",
     "frame-support/runtime-benchmarks",
+    "frame-system-benchmarking/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
     "pallet-balances/runtime-benchmarks",
-    "pallet-timestamp/runtime-benchmarks",
     "pallet-grandpa/runtime-benchmarks",
     "pallet-sudo/runtime-benchmarks",
+    "pallet-timestamp/runtime-benchmarks",
     "pallet-transaction-payment/runtime-benchmarks",
     "pallet-carbon-credits/runtime-benchmarks",
     "pallet-telemetry-proofs/runtime-benchmarks",
@@ -128,3 +133,7 @@ try-runtime = [
     "pallet-telemetry-proofs/try-runtime",
     "sp-runtime/try-runtime",
 ]
+
+metadata-hash = ["substrate-wasm-builder/metadata-hash"]
+
+on-chain-release-build = ["metadata-hash", "sp-api/disable-logging"]
