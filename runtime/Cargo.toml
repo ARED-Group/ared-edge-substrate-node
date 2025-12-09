@@ -14,14 +14,14 @@ description = "ARED Edge private blockchain runtime"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [build-dependencies]
-substrate-wasm-builder.workspace = true
+substrate-wasm-builder = { workspace = true, optional = true, default-features = true }
 
 [dependencies]
 codec.workspace = true
 scale-info.workspace = true
 
 # Frame
-frame-support.workspace = true
+frame-support = { workspace = true, features = ["experimental"] }
 frame-system.workspace = true
 frame-executive.workspace = true
 
@@ -39,7 +39,6 @@ pallet-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", tag = "po
 sp-api.workspace = true
 sp-arithmetic.workspace = true
 sp-block-builder.workspace = true
-sp-io.workspace = true
 sp-consensus-aura.workspace = true
 sp-consensus-grandpa.workspace = true
 sp-core.workspace = true
@@ -83,7 +82,6 @@ std = [
     "sp-consensus-aura/std",
     "sp-consensus-grandpa/std",
     "sp-core/std",
-    "sp-io/std",
     "sp-genesis-builder/std",
     "sp-inherents/std",
     "sp-offchain/std",
@@ -95,6 +93,7 @@ std = [
     "sp-version/std",
     "pallet-carbon-credits/std",
     "pallet-telemetry-proofs/std",
+    "substrate-wasm-builder",
 ]
 try-runtime = [
     "frame-support/try-runtime",

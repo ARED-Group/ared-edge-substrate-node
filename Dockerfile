@@ -22,8 +22,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Add WASM target for Rust 1.84+ (wasm32v1-none provides built-in panic handler)
-# wasm32v1-none is the official target for Substrate runtimes with polkadot-stable2503
+# Add WASM target for Rust 1.85+ (wasm32v1-none has built-in panic handler)
+ENV WASM_BUILD_TARGET=wasm32v1-none
 RUN rustup target add wasm32v1-none && \
     rustup component add rust-src
 
