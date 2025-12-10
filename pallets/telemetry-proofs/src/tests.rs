@@ -4,6 +4,7 @@ use crate::{self as pallet_telemetry_proofs, *};
 use frame_support::{
     assert_noop, assert_ok,
     traits::{ConstU32, ConstU64},
+    BoundedVec,
 };
 use sp_core::H256;
 use sp_runtime::{
@@ -44,6 +45,12 @@ impl frame_system::Config for Test {
     type SS58Prefix = ();
     type OnSetCode = ();
     type MaxConsumers = ConstU32<16>;
+    type RuntimeTask = ();
+    type SingleBlockMigrations = ();
+    type MultiBlockMigrator = ();
+    type PreInherents = ();
+    type PostInherents = ();
+    type PostTransactions = ();
 }
 
 impl Config for Test {

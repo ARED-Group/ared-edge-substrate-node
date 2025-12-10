@@ -4,6 +4,7 @@ use crate::{self as pallet_carbon_credits, *};
 use frame_support::{
     assert_noop, assert_ok,
     traits::{ConstU32, ConstU64, ConstU128},
+    BoundedVec,
 };
 use sp_core::H256;
 use sp_runtime::{
@@ -44,6 +45,12 @@ impl frame_system::Config for Test {
     type SS58Prefix = ();
     type OnSetCode = ();
     type MaxConsumers = ConstU32<16>;
+    type RuntimeTask = ();
+    type SingleBlockMigrations = ();
+    type MultiBlockMigrator = ();
+    type PreInherents = ();
+    type PostInherents = ();
+    type PostTransactions = ();
 }
 
 /// Default emission factor: 1.5 kg CO2/kWh (scaled by 1000 = 1500)
