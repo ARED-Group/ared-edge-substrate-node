@@ -2,7 +2,7 @@
 # ARED Edge Substrate Node - Dockerfile
 # =============================================================================
 # Multi-stage build for Substrate blockchain node
-# Uses Rust 1.85 with wasm32v1-none target (required for Rust 1.84+)
+# Uses polkadot-stable2409 SDK versions with crates.io dependencies
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -21,10 +21,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     pkg-config \
     libssl-dev \
+    perl \
     && rm -rf /var/lib/apt/lists/*
 
-# Add WASM target (wasm32v1-none for Rust 1.84+ with panic handler from sp_io)
-RUN rustup target add wasm32v1-none
+# Add WASM target and rust-src for substrate-wasm-builder
+RUN rustup target add wasm32-unknown-unknown && \
+    rustup component add rust-src
 
 WORKDIR /build
 
@@ -88,10 +90,16 @@ VOLUME ["/data"]
 # 9615  - Prometheus metrics
 EXPOSE 30333 9944 9615
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -sf http://localhost:9944/health || exit 1
+# Health check using Substrate RPC system_health method
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+    CMD curl -sf -H "Content-Type: application/json" \
+        -d '{"jsonrpc":"2.0","method":"system_health","params":[],"id":1}' \
+        http://localhost:9944 || exit 1
 
 # Default entrypoint
 ENTRYPOINT ["ared-edge-node"]
-CMD ["--dev"]
+
+# Default command for development mode
+# For production, override with: --chain=/data/chainspec.json --base-path=/data
+# RPC options: --rpc-external --rpc-cors=all --rpc-methods=safe
+CMD ["--dev", "--base-path=/data", "--rpc-external", "--rpc-cors=all", "--prometheus-external"]
