@@ -66,18 +66,28 @@ spec:
               mountPath: /secrets
               readOnly: true
           livenessProbe:
-            httpGet:
-              path: /health
-              port: 9944
-            initialDelaySeconds: 60
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  curl -sf -H "Content-Type: application/json" \
+                    -d '{"jsonrpc":"2.0","method":"system_health","params":[],"id":1}' \
+                    http://localhost:9944 || exit 1
+            initialDelaySeconds: 120
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 3
           readinessProbe:
-            httpGet:
-              path: /health
-              port: 9944
-            initialDelaySeconds: 30
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  curl -sf -H "Content-Type: application/json" \
+                    -d '{"jsonrpc":"2.0","method":"system_health","params":[],"id":1}' \
+                    http://localhost:9944 || exit 1
+            initialDelaySeconds: 60
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
