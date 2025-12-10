@@ -21,8 +21,7 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, ExtrinsicInclusionMode, MultiSignature,
 };
-use alloc::borrow::Cow;
-use sp_std::prelude::*;
+use alloc::{vec, vec::Vec};
 use sp_version::RuntimeVersion;
 
 // Frame imports
@@ -113,17 +112,18 @@ pub mod opaque {
 /// Runtime version
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: Cow::Borrowed("ared-edge"),
-    impl_name: Cow::Borrowed("ared-edge-node"),
+    spec_name: sp_runtime::create_runtime_str!("ared-edge"),
+    impl_name: sp_runtime::create_runtime_str!("ared-edge-node"),
     authoring_version: 1,
     spec_version: 100,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
-    system_version: 1,
+    state_version: 1,
 };
 
 /// Maximum block weight
+#[allow(dead_code)]
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2),
     u64::MAX,
@@ -199,7 +199,6 @@ impl pallet_balances::Config for Runtime {
     type RuntimeFreezeReason = ();
     type FreezeIdentifier = ();
     type MaxFreezes = ();
-    type DoneSlashHandler = ();
 }
 
 /// Constant fee multiplier for transaction payment
@@ -218,7 +217,6 @@ impl pallet_transaction_payment::Config for Runtime {
     type WeightToFee = frame_support::weights::IdentityFee<Balance>;
     type LengthToFee = frame_support::weights::IdentityFee<Balance>;
     type FeeMultiplierUpdate = pallet_transaction_payment::ConstFeeMultiplier<ConstantFeeMultiplier>;
-    type WeightInfo = pallet_transaction_payment::weights::SubstrateWeight<Runtime>;
 }
 
 // Sudo pallet configuration (for development)
@@ -308,7 +306,7 @@ impl_runtime_apis! {
             Runtime::metadata_at_version(version)
         }
 
-        fn metadata_versions() -> sp_std::vec::Vec<u32> {
+        fn metadata_versions() -> Vec<u32> {
             Runtime::metadata_versions()
         }
     }

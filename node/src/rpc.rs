@@ -7,10 +7,10 @@ use std::sync::Arc;
 use ared_edge_runtime::{opaque::Block, AccountId, Balance, Nonce};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
-use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
 /// Full client dependencies for RPC.
+#[allow(dead_code)]
 pub struct FullDeps<C, P> {
     /// The client instance.
     pub client: Arc<C>,
@@ -19,6 +19,7 @@ pub struct FullDeps<C, P> {
 }
 
 /// Instantiate all RPC extensions.
+#[allow(dead_code)]
 pub fn create_full<C, P>(
     deps: FullDeps<C, P>,
 ) -> Result<jsonrpsee::RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>

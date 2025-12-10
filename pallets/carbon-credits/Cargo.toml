@@ -16,8 +16,8 @@ codec.workspace = true
 scale-info.workspace = true
 frame-support.workspace = true
 frame-system.workspace = true
-sp-std.workspace = true
 sp-runtime.workspace = true
+log.workspace = true
 
 [dev-dependencies]
 sp-core.workspace = true
@@ -30,8 +30,8 @@ std = [
     "scale-info/std",
     "frame-support/std",
     "frame-system/std",
-    "sp-std/std",
     "sp-runtime/std",
+    "log/std",
 ]
 runtime-benchmarks = [
     "frame-support/runtime-benchmarks",
