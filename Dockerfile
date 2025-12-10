@@ -30,8 +30,8 @@ RUN rustup target add wasm32-unknown-unknown && \
 
 WORKDIR /build
 
-# Copy manifests and build scripts first for better layer caching
-COPY Cargo.toml ./
+# Copy manifests, lockfile and build scripts for reproducible builds
+COPY Cargo.toml Cargo.lock ./
 COPY node/Cargo.toml node/build.rs ./node/
 COPY runtime/Cargo.toml runtime/build.rs ./runtime/
 COPY pallets/ ./pallets/
@@ -42,13 +42,13 @@ RUN mkdir -p node/src runtime/src && \
     echo "#![cfg_attr(not(feature = \"std\"), no_std)]" > runtime/src/lib.rs
 
 # Build dependencies only (this layer will be cached)
-RUN cargo build --release --package ared-edge-node || true
+RUN cargo build --release --locked --package ared-edge-node || true
 
 # Copy actual source code
 COPY . .
 
-# Build the actual binary
-RUN cargo build --release --package ared-edge-node
+# Build the actual binary with locked dependencies
+RUN cargo build --release --locked --package ared-edge-node
 
 # -----------------------------------------------------------------------------
 # Runtime Stage
