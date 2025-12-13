@@ -1,14 +1,28 @@
-﻿# =============================================================================
+﻿# syntax=docker/dockerfile:1.4
+# =============================================================================
 # ARED Edge Substrate Node - Dockerfile
 # =============================================================================
-# Multi-stage build for Substrate blockchain node
-# Uses polkadot-stable2409 SDK versions with crates.io dependencies
+# Enterprise-grade multi-stage build with BuildKit optimizations
+# - Cargo registry/git caching for faster rebuilds
+# - Controlled parallelism to prevent resource exhaustion
+# - Separate dev and production build profiles
 # =============================================================================
 
 # -----------------------------------------------------------------------------
 # Build Stage
 # -----------------------------------------------------------------------------
 FROM rust:1.85-slim-bookworm AS builder
+
+# Build arguments for controlling resource usage
+ARG CARGO_BUILD_JOBS=2
+ARG CARGO_PROFILE=release
+
+# Environment variables for build optimization
+ENV CARGO_BUILD_JOBS=${CARGO_BUILD_JOBS} \
+    CARGO_INCREMENTAL=0 \
+    CARGO_NET_GIT_FETCH_WITH_CLI=true \
+    CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse \
+    RUSTFLAGS="-C codegen-units=16"
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -32,6 +46,7 @@ WORKDIR /build
 
 # Copy manifests, lockfile and build scripts for reproducible builds
 COPY Cargo.toml Cargo.lock ./
+COPY .cargo/config.toml ./.cargo/
 COPY node/Cargo.toml node/build.rs ./node/
 COPY runtime/Cargo.toml runtime/build.rs ./runtime/
 COPY pallets/ ./pallets/
@@ -41,14 +56,25 @@ RUN mkdir -p node/src runtime/src && \
     echo "fn main() {}" > node/src/main.rs && \
     echo "#![cfg_attr(not(feature = \"std\"), no_std)]" > runtime/src/lib.rs
 
-# Build dependencies only (this layer will be cached)
-RUN cargo build --release --locked --package ared-edge-node || true
+# Build dependencies only with BuildKit cache mounts
+# This dramatically speeds up rebuilds by caching:
+# - Cargo registry index and crate sources
+# - Cargo git checkouts
+# - Compiled dependencies in target directory
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,target=/build/target,sharing=locked \
+    cargo build --${CARGO_PROFILE} --locked --package ared-edge-node || true
 
 # Copy actual source code
 COPY . .
 
-# Build the actual binary with locked dependencies
-RUN cargo build --release --locked --package ared-edge-node
+# Build the actual binary with BuildKit cache mounts
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,target=/build/target,sharing=locked \
+    cargo build --${CARGO_PROFILE} --locked --package ared-edge-node && \
+    cp /build/target/${CARGO_PROFILE}/ared-edge-node /build/ared-edge-node
 
 # -----------------------------------------------------------------------------
 # Runtime Stage
@@ -67,8 +93,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd --gid 1000 substrate && \
     useradd --uid 1000 --gid substrate --shell /bin/bash --create-home substrate
 
-# Copy binary from builder
-COPY --from=builder /build/target/release/ared-edge-node /usr/local/bin/
+# Copy binary from builder (uses the copied binary from build stage)
+COPY --from=builder /build/ared-edge-node /usr/local/bin/
 
 # Create data directory
 RUN mkdir -p /data && chown substrate:substrate /data
