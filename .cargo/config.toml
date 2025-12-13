@@ -1,0 +1,85 @@
+# =============================================================================
+# ARED Edge Substrate Node - Cargo Build Configuration
+# =============================================================================
+# Enterprise-grade build settings to prevent system resource exhaustion
+# and optimize compilation times while maintaining production quality.
+# =============================================================================
+
+[build]
+# Limit parallel compilation jobs to prevent CPU/memory exhaustion
+# Prevents system freezes on resource-constrained machines
+# Set to number of cores - 2, minimum 1
+jobs = 2
+
+# Use incremental compilation for faster rebuilds during development
+incremental = true
+
+[env]
+# Ensure consistent behavior across builds
+CARGO_INCREMENTAL = "1"
+
+[profile.dev]
+# Development profile: prioritize compile speed over runtime performance
+opt-level = 0
+debug = true
+debug-assertions = true
+overflow-checks = true
+lto = false
+panic = "unwind"
+incremental = true
+# More codegen units = faster compile, slightly larger binary
+codegen-units = 256
+# Reduce debug info for faster compiles (still debuggable)
+split-debuginfo = "unpacked"
+
+[profile.dev.package."*"]
+# Optimize dependencies even in dev mode (they rarely change)
+opt-level = 2
+
+[profile.release]
+# Release profile: balanced optimization
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = "thin"
+panic = "unwind"
+incremental = false
+codegen-units = 16
+strip = "symbols"
+
+[profile.production]
+# Production profile: maximum optimization for deployment
+inherits = "release"
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
+
+[target.x86_64-unknown-linux-gnu]
+# Linux-specific linker optimizations
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[target.wasm32-unknown-unknown]
+# WASM target settings for Substrate runtime
+rustflags = [
+    "-C", "link-arg=--import-memory",
+    "-C", "link-arg=--export-table",
+]
+
+[net]
+# Network settings for crate downloads
+retry = 3
+git-fetch-with-cli = true
+
+[registries.crates-io]
+protocol = "sparse"
+
+[alias]
+# Convenience aliases
+b = "build"
+c = "check"
+t = "test"
+r = "run"
+br = "build --release"
+# Fast check without building (type checking only)
+ck = "check --all-targets"
