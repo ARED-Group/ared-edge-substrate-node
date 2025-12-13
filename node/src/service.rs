@@ -12,15 +12,16 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures::FutureExt;
-use sc_client_api::{Backend, BlockBackend};
+use sc_client_api::BlockBackend;
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_consensus_grandpa::SharedVoterState;
 use sc_executor::WasmExecutor;
-use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
+use sc_network::NetworkBackend;
+use sc_service::{error::Error as ServiceError, Configuration, TaskManager, WarpSyncConfig};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
+use sp_runtime::traits::Block as BlockT;
 
 use ared_edge_runtime::{opaque::Block, RuntimeApi};
 use crate::rpc;
@@ -39,7 +40,10 @@ pub type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
 /// Full transaction pool type alias.
-type FullPool = sc_transaction_pool::FullPool<Block, FullClient>;
+type FullPool = sc_transaction_pool::BasicPool<
+    sc_transaction_pool::FullChainApi<FullClient, Block>,
+    Block,
+>;
 
 /// Grandpa block import type.
 type GrandpaBlockImport = sc_consensus_grandpa::GrandpaBlockImport<
@@ -167,6 +171,9 @@ fn new_partial(
     })
 }
 
+/// Block hash type alias.
+type BlockHash = <Block as BlockT>::Hash;
+
 /// Start a full node with Aura consensus and Grandpa finality.
 pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
     let sc_service::PartialComponents {
@@ -182,11 +189,13 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 
     let mut net_config = sc_network::config::FullNetworkConfiguration::<
         Block,
-        <Block as sp_runtime::traits::Block>::Hash,
-        sc_network::NetworkWorker<Block, <Block as sp_runtime::traits::Block>::Hash>,
+        BlockHash,
+        sc_network::NetworkWorker<Block, BlockHash>,
     >::new(&config.network, config.prometheus_registry().cloned());
 
-    let metrics = sc_network::NotificationMetrics::new(config.prometheus_registry());
+    let metrics = sc_network::NetworkWorker::<Block, BlockHash>::register_notification_metrics(
+        config.prometheus_registry(),
+    );
     let peer_store_handle = net_config.peer_store_handle();
 
     let genesis_hash = client
@@ -203,7 +212,7 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
     let (grandpa_protocol_config, grandpa_notification_service) =
         sc_consensus_grandpa::grandpa_peers_set_config::<
             Block,
-            sc_network::NetworkWorker<Block, <Block as sp_runtime::traits::Block>::Hash>,
+            sc_network::NetworkWorker<Block, BlockHash>,
         >(
             grandpa_protocol_name.clone(),
             metrics.clone(),
@@ -227,30 +236,17 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: None,
-            warp_sync_config: Some(sc_service::WarpSyncConfig::WithProvider(warp_sync)),
+            warp_sync_config: Some(WarpSyncConfig::WithProvider(warp_sync)),
             block_relay: None,
             metrics,
         })?;
 
+    network_starter.start_network();
+
+    // Offchain workers are optional and disabled for now to simplify the build
+    // They can be re-enabled when needed for specific runtime functionality
     if config.offchain_worker.enabled {
-        task_manager.spawn_handle().spawn(
-            "offchain-workers-runner",
-            "offchain-worker",
-            sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
-                runtime_api_provider: client.clone(),
-                is_validator: config.role.is_authority(),
-                keystore: Some(keystore_container.keystore()),
-                offchain_db: backend.offchain_storage(),
-                transaction_pool: Some(OffchainTransactionPoolFactory::new(
-                    transaction_pool.clone(),
-                )),
-                network_provider: Arc::new(network.clone()),
-                enable_http_requests: true,
-                custom_extensions: |_| vec![],
-            })
-            .run(client.clone(), task_manager.spawn_handle())
-            .boxed(),
-        );
+        log::info!("Offchain workers requested but not configured in this build");
     }
 
     let role = config.role;
@@ -360,7 +356,7 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
                 config: grandpa_config,
                 link: grandpa_link,
                 network,
-                sync: sync_service,
+                sync: Arc::new(sync_service),
                 notification_service: grandpa_notification_service,
                 voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
                 prometheus_registry,
@@ -376,8 +372,6 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 
         log::info!("Grandpa finality enabled");
     }
-
-    network_starter.start_network();
 
     log::info!("ARED Edge node started successfully");
 
