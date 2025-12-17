@@ -87,5 +87,29 @@ Contact & support
 - See OWNERS for maintainers and escalation paths.
 - Use issues to report bugs or request features; label appropriately (bug, enhancement, infra).
 
+Integration with Edge Services
+
+This node integrates with the edge-iot-mqtt-services repository for telemetry ingestion and proof generation.
+
+Related Documentation
+- [Failure Recovery Matrix](../edge-iot-mqtt-services/docs/FAILURE_RECOVERY_MATRIX.md) - Recovery procedures for Substrate failures
+- [Prospect Integration](../edge-iot-mqtt-services/docs/PROSPECT_INTEGRATION.md) - Cloud sync of proof references
+- [Storage Retention](../edge-iot-mqtt-services/docs/STORAGE_RETENTION.md) - Data retention policies
+
+Storage Requirements
+| Component | Storage Type | Recommended Size | Notes |
+|-----------|--------------|------------------|-------|
+| Chain DB | Longhorn PVC | 50GB minimum | RocksDB/ParityDB, grows with chain history |
+| Snapshots | MinIO/S3 | 100GB | Periodic backups for disaster recovery |
+| Logs | Ephemeral | 1GB | Structured JSON, ship to centralized logging |
+
+Failure Recovery
+| Failure Mode | Detection | Recovery |
+|--------------|-----------|----------|
+| Node crash | Liveness probe failure | K8s auto-restart, resume from persisted state |
+| DB corruption | Health check, block import errors | Restore from snapshot, resync from peers |
+| Network partition | Peer count drop, finalization stall | Wait for network recovery, manual peer injection |
+| Resource exhaustion | OOM kill, CPU throttle | Increase limits, optimize runtime |
+
 License
 - Add LICENSE in repo root (choose appropriate open-source license).
