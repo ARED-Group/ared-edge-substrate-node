@@ -11,13 +11,11 @@ The ARED Edge runtime is built on Substrate and includes:
 
 ## Block Time Configuration
 
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| MILLISECS_PER_BLOCK | 6000 | Target block time in milliseconds |
-| SLOT_DURATION | 6000 | Aura slot duration |
-| MINUTES | 10 blocks | Blocks per minute |
-| HOURS | 600 blocks | Blocks per hour |
-| DAYS | 14,400 blocks | Blocks per day |
+- **MILLISECS_PER_BLOCK:** 6000 (Target block time in milliseconds)
+- **SLOT_DURATION:** 6000 (Aura slot duration)
+- **MINUTES:** 10 blocks (Blocks per minute)
+- **HOURS:** 600 blocks (Blocks per hour)
+- **DAYS:** 14,400 blocks (Blocks per day)
 
 Block time of 6 seconds provides a balance between:
 - Fast enough for responsive telemetry proof submission
@@ -60,65 +58,49 @@ Operational transactions pay 5x the normal fee, ensuring they can be prioritized
 
 ### System Pallet
 
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| BlockHashCount | 256 | Number of recent block hashes to keep |
-| AccountData | pallet_balances::AccountData | Account balance storage |
+- **BlockHashCount:** 256 (Number of recent block hashes to keep)
+- **AccountData:** pallet_balances::AccountData (Account balance storage)
 
 ### Timestamp Pallet
 
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| MinimumPeriod | 3000 ms | Half of slot duration |
+- **MinimumPeriod:** 3000 ms (Half of slot duration)
 
 ### Balances Pallet
 
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| MaxLocks | 50 | Maximum balance locks per account |
-| ExistentialDeposit | 500 | Minimum balance for account existence |
+- **MaxLocks:** 50 (Maximum balance locks per account)
+- **ExistentialDeposit:** 500 (Minimum balance for account existence)
 
 ### Transaction Payment Pallet
 
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| OperationalFeeMultiplier | 5 | Priority fee multiplier |
-| FeeMultiplierUpdate | ConstFeeMultiplier(1) | Static fee multiplier |
+- **OperationalFeeMultiplier:** 5 (Priority fee multiplier)
+- **FeeMultiplierUpdate:** ConstFeeMultiplier(1) (Static fee multiplier)
 
 ### Consensus Pallets
 
 #### Aura
 
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| MaxAuthorities | 32 | Maximum block producers |
-| AllowMultipleBlocksPerSlot | false | One block per slot |
+- **MaxAuthorities:** 32 (Maximum block producers)
+- **AllowMultipleBlocksPerSlot:** false (One block per slot)
 
 #### Grandpa
 
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| MaxAuthorities | 32 | Maximum finalizers |
-| MaxNominators | 0 | No nomination (private chain) |
+- **MaxAuthorities:** 32 (Maximum finalizers)
+- **MaxNominators:** 0 (No nomination, private chain)
 
 ### Telemetry Proofs Pallet
 
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| MaxDeviceIdLength | 64 | UUID (36) + buffer for future formats |
-| MaxProofLength | 128 | SHA-256 hex (64) + metadata buffer |
-| MaxBatchSize | 100 | Balance between efficiency and block weight |
-| MaxProofsPerDevice | 10,000 | ~1 year of daily proofs with margin |
+- **MaxDeviceIdLength:** 64 (UUID 36 + buffer for future formats)
+- **MaxProofLength:** 128 (SHA-256 hex 64 + metadata buffer)
+- **MaxBatchSize:** 100 (Balance between efficiency and block weight)
+- **MaxProofsPerDevice:** 10,000 (Approximately 1 year of daily proofs with margin)
 
 ### Carbon Credits Pallet
 
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| MaxDeviceIdLength | 64 | Consistent with TelemetryProofs |
-| CreditsPerTonCO2 | 1,000 | 1 credit = 1 kg CO2 avoided |
-| DefaultEmissionFactor | 1500 | 1.5 kg CO2/kWh (traditional cooking baseline) |
-| MinClaimableEnergy | 1,000 Wh | Minimum 1 kWh to prevent dust claims |
-| MaxIssuanceRecords | 10,000 | Consistent retention with proofs |
+- **MaxDeviceIdLength:** 64 (Consistent with TelemetryProofs)
+- **CreditsPerTonCO2:** 1,000 (1 credit = 1 kg CO2 avoided)
+- **DefaultEmissionFactor:** 1500 (1.5 kg CO2/kWh, traditional cooking baseline)
+- **MinClaimableEnergy:** 1,000 Wh (Minimum 1 kWh to prevent dust claims)
+- **MaxIssuanceRecords:** 10,000 (Consistent retention with proofs)
 
 ## Carbon Credit Calculation
 

@@ -15,13 +15,11 @@ The ARED Edge blockchain supports three network configurations:
 
 Single-node configuration for local development and testing.
 
-| Parameter | Value |
-|-----------|-------|
-| Chain ID | `ared_edge_dev` |
-| Chain Type | Development |
-| Protocol ID | `ared-edge-dev` |
-| Validators | 1 (Alice) |
-| Sudo | Enabled (Alice) |
+- **Chain ID:** ared_edge_dev
+- **Chain Type:** Development
+- **Protocol ID:** ared-edge-dev
+- **Validators:** 1 (Alice)
+- **Sudo:** Enabled (Alice)
 
 **Pre-funded Accounts:**
 - Alice: 1,000,000 ARED (full balance)
@@ -32,13 +30,11 @@ Single-node configuration for local development and testing.
 
 Multi-node configuration for local network testing.
 
-| Parameter | Value |
-|-----------|-------|
-| Chain ID | `ared_edge_local` |
-| Chain Type | Local |
-| Protocol ID | `ared-edge-local` |
-| Validators | 2 (Alice, Bob) |
-| Sudo | Enabled (Alice) |
+- **Chain ID:** ared_edge_local
+- **Chain Type:** Local
+- **Protocol ID:** ared-edge-local
+- **Validators:** 2 (Alice, Bob)
+- **Sudo:** Enabled (Alice)
 
 **Pre-funded Accounts:**
 - Alice: 1,000,000 ARED
@@ -50,13 +46,11 @@ Multi-node configuration for local network testing.
 
 Production network configuration.
 
-| Parameter | Value |
-|-----------|-------|
-| Chain ID | `ared_edge_mainnet` |
-| Chain Type | Live |
-| Protocol ID | `ared-edge` |
-| Validators | 3+ (configurable) |
-| Sudo | Disabled |
+- **Chain ID:** ared_edge_mainnet
+- **Chain Type:** Live
+- **Protocol ID:** ared-edge
+- **Validators:** 3+ (configurable)
+- **Sudo:** Disabled
 
 **Pre-funded Accounts:**
 - Root: 1,000,000 ARED (governance)
@@ -65,11 +59,9 @@ Production network configuration.
 
 ## Token Properties
 
-| Property | Value |
-|----------|-------|
-| Symbol | ARED |
-| Decimals | 18 |
-| SS58 Prefix | 42 |
+- **Symbol:** ARED
+- **Decimals:** 18
+- **SS58 Prefix:** 42
 
 ## Genesis Configuration
 
@@ -119,47 +111,37 @@ Validators require:
 
 ### Block Time
 
-| Parameter | Value |
-|-----------|-------|
-| Slot Duration | 6000 ms |
-| Block Time | 6 seconds |
+- **Slot Duration:** 6000 ms
+- **Block Time:** 6 seconds
 
 ### Time Constants
 
-| Constant | Blocks |
-|----------|--------|
-| MINUTES | 10 |
-| HOURS | 600 |
-| DAYS | 14,400 |
+- **MINUTES:** 10 blocks
+- **HOURS:** 600 blocks
+- **DAYS:** 14,400 blocks
 
 ### Weight Limits
 
-| Parameter | Value |
-|-----------|-------|
-| Maximum Block Weight | 2 seconds of execution |
-| Normal Dispatch Ratio | 75% |
-| Operational Dispatch Ratio | 25% |
+- **Maximum Block Weight:** 2 seconds of execution
+- **Normal Dispatch Ratio:** 75%
+- **Operational Dispatch Ratio:** 25%
 
 ## Pallet Configuration
 
 ### Telemetry Proofs
 
-| Parameter | Value |
-|-----------|-------|
-| MaxDeviceIdLength | 64 bytes |
-| MaxProofLength | 128 bytes |
-| MaxBatchSize | 100 proofs |
-| MaxProofsPerDevice | 10,000 |
+- **MaxDeviceIdLength:** 64 bytes
+- **MaxProofLength:** 128 bytes
+- **MaxBatchSize:** 100 proofs
+- **MaxProofsPerDevice:** 10,000
 
 ### Carbon Credits
 
-| Parameter | Value |
-|-----------|-------|
-| MaxDeviceIdLength | 64 bytes |
-| CreditsPerTonCO2 | 1,000 credits |
-| DefaultEmissionFactor | 1500 (1.5 kg CO2/kWh) |
-| MinClaimableEnergy | 1,000 Wh (1 kWh) |
-| MaxIssuanceRecords | 10,000 |
+- **MaxDeviceIdLength:** 64 bytes
+- **CreditsPerTonCO2:** 1,000 credits
+- **DefaultEmissionFactor:** 1500 (1.5 kg CO2/kWh)
+- **MinClaimableEnergy:** 1,000 Wh (1 kWh)
+- **MaxIssuanceRecords:** 10,000
 
 ## Generating Chain Spec Files
 
