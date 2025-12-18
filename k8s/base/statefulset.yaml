@@ -92,21 +92,12 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
       volumes:
+        - name: chain-data
+          emptyDir:
+            sizeLimit: 50Gi
         - name: node-key
           secret:
             secretName: substrate-node-key
-  volumeClaimTemplates:
-    - metadata:
-        name: chain-data
-        labels:
-          app.kubernetes.io/name: substrate-node
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        storageClassName: longhorn
-        resources:
-          requests:
-            storage: 100Gi
 
 ---
 apiVersion: v1
