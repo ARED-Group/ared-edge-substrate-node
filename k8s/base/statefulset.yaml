@@ -30,8 +30,8 @@ spec:
         fsGroup: 1000
       containers:
         - name: substrate-node
-          image: ghcr.io/ared/substrate-node:latest
-          imagePullPolicy: IfNotPresent
+          image: docker.io/library/ared-substrate-node:latest
+          imagePullPolicy: Never
           args:
             - "--chain=production"
             - "--base-path=/data"
