@@ -1,4 +1,4 @@
-﻿//! ARED Edge Runtime
+//! ARED Edge Runtime
 //!
 //! The runtime for ARED Edge blockchain node, implementing
 //! telemetry proofs, carbon calculations, and device management.
@@ -11,6 +11,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use alloc::{vec, vec::Vec};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
@@ -21,7 +22,6 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, ExtrinsicInclusionMode, MultiSignature,
 };
-use alloc::{vec, vec::Vec};
 use sp_version::RuntimeVersion;
 
 // Frame imports
@@ -64,8 +64,12 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 pub type BlockId = generic::BlockId<Block>;
 
 /// Unchecked extrinsic type
-pub type UncheckedExtrinsic =
-    generic::UncheckedExtrinsic<sp_runtime::MultiAddress<AccountId, ()>, RuntimeCall, Signature, SignedExtra>;
+pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<
+    sp_runtime::MultiAddress<AccountId, ()>,
+    RuntimeCall,
+    Signature,
+    SignedExtra,
+>;
 
 /// Executive type
 pub type Executive = frame_executive::Executive<
@@ -124,10 +128,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 
 /// Maximum block weight
 #[allow(dead_code)]
-const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
-    WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2),
-    u64::MAX,
-);
+const MAXIMUM_BLOCK_WEIGHT: Weight =
+    Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2), u64::MAX);
 
 /// Block execution time target (6 seconds)
 pub const MILLISECS_PER_BLOCK: u64 = 6000;
@@ -216,7 +218,8 @@ impl pallet_transaction_payment::Config for Runtime {
     type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
     type WeightToFee = frame_support::weights::IdentityFee<Balance>;
     type LengthToFee = frame_support::weights::IdentityFee<Balance>;
-    type FeeMultiplierUpdate = pallet_transaction_payment::ConstFeeMultiplier<ConstantFeeMultiplier>;
+    type FeeMultiplierUpdate =
+        pallet_transaction_payment::ConstFeeMultiplier<ConstantFeeMultiplier>;
 }
 
 // Sudo pallet configuration (for development)

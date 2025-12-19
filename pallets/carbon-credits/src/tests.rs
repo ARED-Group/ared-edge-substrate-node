@@ -3,7 +3,7 @@
 use crate::{self as pallet_carbon_credits, *};
 use frame_support::{
     assert_noop, assert_ok,
-    traits::{ConstU32, ConstU64, ConstU128},
+    traits::{ConstU128, ConstU32, ConstU64},
     BoundedVec,
 };
 use sp_core::H256;
@@ -86,14 +86,14 @@ fn device_id(id: &str) -> Vec<u8> {
 fn record_energy_works() {
     new_test_ext().execute_with(|| {
         let dev_id = device_id("device-001");
-        
+
         assert_ok!(CarbonCredits::record_energy(
             RuntimeOrigin::signed(1),
             dev_id.clone(),
             5000, // 5 kWh
             None,
         ));
-        
+
         let bounded_dev_id: BoundedVec<u8, ConstU32<64>> = dev_id.try_into().unwrap();
         assert_eq!(CarbonCredits::energy_accumulated(&bounded_dev_id), 5000);
         assert_eq!(CarbonCredits::total_energy(&bounded_dev_id), 5000);
@@ -105,25 +105,25 @@ fn record_energy_works() {
 fn record_energy_accumulates() {
     new_test_ext().execute_with(|| {
         let dev_id = device_id("device-001");
-        
+
         assert_ok!(CarbonCredits::record_energy(
             RuntimeOrigin::signed(1),
             dev_id.clone(),
             3000,
             None,
         ));
-        
+
         assert_ok!(CarbonCredits::record_energy(
             RuntimeOrigin::signed(1),
             dev_id.clone(),
             2000,
             None,
         ));
-        
+
         let bounded_dev_id: BoundedVec<u8, ConstU32<64>> = dev_id.try_into().unwrap();
         assert_eq!(CarbonCredits::energy_accumulated(&bounded_dev_id), 5000);
         assert_eq!(CarbonCredits::total_energy(&bounded_dev_id), 5000);
-        
+
         // Device count should still be 1
         assert_eq!(CarbonCredits::active_device_count(), 1);
     });
@@ -133,7 +133,7 @@ fn record_energy_accumulates() {
 fn claim_credits_works() {
     new_test_ext().execute_with(|| {
         let dev_id = device_id("device-001");
-        
+
         // Record 10 kWh (10000 Wh)
         assert_ok!(CarbonCredits::record_energy(
             RuntimeOrigin::signed(1),
@@ -141,18 +141,18 @@ fn claim_credits_works() {
             10_000,
             None,
         ));
-        
+
         // Claim credits
         assert_ok!(CarbonCredits::claim_credits(
             RuntimeOrigin::signed(1),
             dev_id.clone(),
         ));
-        
+
         let bounded_dev_id: BoundedVec<u8, ConstU32<64>> = dev_id.try_into().unwrap();
-        
+
         // Verify accumulated energy is reset
         assert_eq!(CarbonCredits::energy_accumulated(&bounded_dev_id), 0);
-        
+
         // Calculate expected credits:
         // energy_kwh = 10000 / 1000 = 10 kWh
         // co2_avoided_kg = 10 * 1500 / 1000 = 15 kg
@@ -168,7 +168,7 @@ fn claim_credits_works() {
 fn claim_credits_requires_minimum_energy() {
     new_test_ext().execute_with(|| {
         let dev_id = device_id("device-001");
-        
+
         // Record less than minimum (1000 Wh)
         assert_ok!(CarbonCredits::record_energy(
             RuntimeOrigin::signed(1),
@@ -176,13 +176,10 @@ fn claim_credits_requires_minimum_energy() {
             500, // 0.5 kWh
             None,
         ));
-        
+
         // Claim should fail
         assert_noop!(
-            CarbonCredits::claim_credits(
-                RuntimeOrigin::signed(1),
-                dev_id,
-            ),
+            CarbonCredits::claim_credits(RuntimeOrigin::signed(1), dev_id,),
             Error::<Test>::EnergyBelowMinimum
         );
     });
@@ -192,12 +189,9 @@ fn claim_credits_requires_minimum_energy() {
 fn claim_credits_fails_with_no_energy() {
     new_test_ext().execute_with(|| {
         let dev_id = device_id("device-001");
-        
+
         assert_noop!(
-            CarbonCredits::claim_credits(
-                RuntimeOrigin::signed(1),
-                dev_id,
-            ),
+            CarbonCredits::claim_credits(RuntimeOrigin::signed(1), dev_id,),
             Error::<Test>::NoCreditsAvailable
         );
     });
@@ -208,7 +202,7 @@ fn transfer_credits_works() {
     new_test_ext().execute_with(|| {
         let dev1 = device_id("device-001");
         let dev2 = device_id("device-002");
-        
+
         // Record and claim for device 1
         assert_ok!(CarbonCredits::record_energy(
             RuntimeOrigin::signed(1),
@@ -220,13 +214,13 @@ fn transfer_credits_works() {
             RuntimeOrigin::signed(1),
             dev1.clone(),
         ));
-        
+
         let bounded_dev1: BoundedVec<u8, ConstU32<64>> = dev1.clone().try_into().unwrap();
         let bounded_dev2: BoundedVec<u8, ConstU32<64>> = dev2.clone().try_into().unwrap();
-        
+
         let initial_balance = CarbonCredits::credits_balance(&bounded_dev1);
         assert!(initial_balance > 0);
-        
+
         // Transfer half
         let transfer_amount = initial_balance / 2;
         assert_ok!(CarbonCredits::transfer_credits(
@@ -235,12 +229,15 @@ fn transfer_credits_works() {
             dev2,
             transfer_amount,
         ));
-        
+
         assert_eq!(
             CarbonCredits::credits_balance(&bounded_dev1),
             initial_balance - transfer_amount
         );
-        assert_eq!(CarbonCredits::credits_balance(&bounded_dev2), transfer_amount);
+        assert_eq!(
+            CarbonCredits::credits_balance(&bounded_dev2),
+            transfer_amount
+        );
     });
 }
 
@@ -249,15 +246,10 @@ fn transfer_credits_fails_insufficient_balance() {
     new_test_ext().execute_with(|| {
         let dev1 = device_id("device-001");
         let dev2 = device_id("device-002");
-        
+
         // Try to transfer without any credits
         assert_noop!(
-            CarbonCredits::transfer_credits(
-                RuntimeOrigin::signed(1),
-                dev1,
-                dev2,
-                100,
-            ),
+            CarbonCredits::transfer_credits(RuntimeOrigin::signed(1), dev1, dev2, 100,),
             Error::<Test>::InsufficientCredits
         );
     });
@@ -267,14 +259,9 @@ fn transfer_credits_fails_insufficient_balance() {
 fn transfer_credits_fails_same_device() {
     new_test_ext().execute_with(|| {
         let dev1 = device_id("device-001");
-        
+
         assert_noop!(
-            CarbonCredits::transfer_credits(
-                RuntimeOrigin::signed(1),
-                dev1.clone(),
-                dev1,
-                100,
-            ),
+            CarbonCredits::transfer_credits(RuntimeOrigin::signed(1), dev1.clone(), dev1, 100,),
             Error::<Test>::SameDeviceTransfer
         );
     });
@@ -285,7 +272,7 @@ fn withdraw_credits_works() {
     new_test_ext().execute_with(|| {
         let dev_id = device_id("device-001");
         let account: u64 = 42;
-        
+
         // Record and claim
         assert_ok!(CarbonCredits::record_energy(
             RuntimeOrigin::signed(1),
@@ -297,10 +284,10 @@ fn withdraw_credits_works() {
             RuntimeOrigin::signed(1),
             dev_id.clone(),
         ));
-        
+
         let bounded_dev_id: BoundedVec<u8, ConstU32<64>> = dev_id.clone().try_into().unwrap();
         let device_balance = CarbonCredits::credits_balance(&bounded_dev_id);
-        
+
         // Withdraw to account
         let withdraw_amount = device_balance / 2;
         assert_ok!(CarbonCredits::withdraw_credits(
@@ -308,7 +295,7 @@ fn withdraw_credits_works() {
             dev_id,
             withdraw_amount,
         ));
-        
+
         assert_eq!(
             CarbonCredits::credits_balance(&bounded_dev_id),
             device_balance - withdraw_amount
@@ -322,13 +309,13 @@ fn set_emission_factor_works() {
     new_test_ext().execute_with(|| {
         let initial_factor = CarbonCredits::emission_factor();
         assert_eq!(initial_factor, 1500); // Default
-        
+
         // Update factor (requires root)
         assert_ok!(CarbonCredits::set_emission_factor(
             RuntimeOrigin::root(),
             2000, // 2.0 kg CO2/kWh
         ));
-        
+
         assert_eq!(CarbonCredits::emission_factor(), 2000);
     });
 }
@@ -338,10 +325,7 @@ fn set_emission_factor_requires_root() {
     new_test_ext().execute_with(|| {
         // Non-root should fail
         assert_noop!(
-            CarbonCredits::set_emission_factor(
-                RuntimeOrigin::signed(1),
-                2000,
-            ),
+            CarbonCredits::set_emission_factor(RuntimeOrigin::signed(1), 2000,),
             sp_runtime::DispatchError::BadOrigin
         );
     });
@@ -351,10 +335,7 @@ fn set_emission_factor_requires_root() {
 fn set_emission_factor_rejects_zero() {
     new_test_ext().execute_with(|| {
         assert_noop!(
-            CarbonCredits::set_emission_factor(
-                RuntimeOrigin::root(),
-                0,
-            ),
+            CarbonCredits::set_emission_factor(RuntimeOrigin::root(), 0,),
             Error::<Test>::InvalidEmissionFactor
         );
     });
@@ -368,7 +349,7 @@ fn calculate_credits_helper_works() {
         // 100 kWh = 100 * 1.5 = 150 kg CO2 = 0.15 ton = 150 credits
         let credits = CarbonCredits::calculate_credits(100_000); // 100 kWh in Wh
         assert_eq!(credits, 150);
-        
+
         // 1000 kWh = 1000 * 1.5 = 1500 kg = 1.5 ton = 1500 credits
         let credits = CarbonCredits::calculate_credits(1_000_000); // 1000 kWh
         assert_eq!(credits, 1500);
@@ -380,7 +361,7 @@ fn get_stats_works() {
     new_test_ext().execute_with(|| {
         let dev1 = device_id("device-001");
         let dev2 = device_id("device-002");
-        
+
         // Record energy for two devices
         assert_ok!(CarbonCredits::record_energy(
             RuntimeOrigin::signed(1),
@@ -394,13 +375,13 @@ fn get_stats_works() {
             50_000,
             None,
         ));
-        
+
         // Claim for both
         assert_ok!(CarbonCredits::claim_credits(RuntimeOrigin::signed(1), dev1));
         assert_ok!(CarbonCredits::claim_credits(RuntimeOrigin::signed(1), dev2));
-        
+
         let (total_credits, total_co2, active_devices) = CarbonCredits::get_stats();
-        
+
         assert!(total_credits > 0);
         assert!(total_co2 > 0);
         assert_eq!(active_devices, 2);
@@ -411,7 +392,7 @@ fn get_stats_works() {
 fn total_energy_persists_after_claim() {
     new_test_ext().execute_with(|| {
         let dev_id = device_id("device-001");
-        
+
         // Record 10 kWh
         assert_ok!(CarbonCredits::record_energy(
             RuntimeOrigin::signed(1),
@@ -419,19 +400,19 @@ fn total_energy_persists_after_claim() {
             10_000,
             None,
         ));
-        
+
         // Claim
         assert_ok!(CarbonCredits::claim_credits(
             RuntimeOrigin::signed(1),
             dev_id.clone(),
         ));
-        
+
         let bounded_dev_id: BoundedVec<u8, ConstU32<64>> = dev_id.clone().try_into().unwrap();
-        
+
         // Accumulated should be 0, but total should remain
         assert_eq!(CarbonCredits::energy_accumulated(&bounded_dev_id), 0);
         assert_eq!(CarbonCredits::total_energy(&bounded_dev_id), 10_000);
-        
+
         // Record more
         assert_ok!(CarbonCredits::record_energy(
             RuntimeOrigin::signed(1),
@@ -439,7 +420,7 @@ fn total_energy_persists_after_claim() {
             5_000,
             None,
         ));
-        
+
         assert_eq!(CarbonCredits::energy_accumulated(&bounded_dev_id), 5_000);
         assert_eq!(CarbonCredits::total_energy(&bounded_dev_id), 15_000);
     });

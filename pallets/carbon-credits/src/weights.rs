@@ -9,16 +9,16 @@ use frame_support::{traits::Get, weights::Weight};
 pub trait WeightInfo {
     /// Weight for recording energy usage.
     fn record_energy() -> Weight;
-    
+
     /// Weight for claiming carbon credits.
     fn claim_credits() -> Weight;
-    
+
     /// Weight for transferring credits between devices.
     fn transfer_credits() -> Weight;
-    
+
     /// Weight for withdrawing credits to account.
     fn withdraw_credits() -> Weight;
-    
+
     /// Weight for setting emission factor.
     fn set_emission_factor() -> Weight;
 }
@@ -44,7 +44,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
             .saturating_add(T::DbWeight::get().reads(3))
             .saturating_add(T::DbWeight::get().writes(3))
     }
-    
+
     /// Weight for claiming credits.
     ///
     /// Operations:
@@ -62,7 +62,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
             .saturating_add(T::DbWeight::get().reads(2))
             .saturating_add(T::DbWeight::get().writes(5))
     }
-    
+
     /// Weight for transferring credits.
     ///
     /// Operations:
@@ -75,7 +75,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
             .saturating_add(T::DbWeight::get().reads(1))
             .saturating_add(T::DbWeight::get().writes(2))
     }
-    
+
     /// Weight for withdrawing credits to account.
     ///
     /// Operations:
@@ -88,7 +88,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
             .saturating_add(T::DbWeight::get().reads(1))
             .saturating_add(T::DbWeight::get().writes(2))
     }
-    
+
     /// Weight for setting emission factor.
     ///
     /// Operations:
@@ -107,19 +107,19 @@ impl WeightInfo for () {
     fn record_energy() -> Weight {
         Weight::from_parts(10_000, 0)
     }
-    
+
     fn claim_credits() -> Weight {
         Weight::from_parts(10_000, 0)
     }
-    
+
     fn transfer_credits() -> Weight {
         Weight::from_parts(10_000, 0)
     }
-    
+
     fn withdraw_credits() -> Weight {
         Weight::from_parts(10_000, 0)
     }
-    
+
     fn set_emission_factor() -> Weight {
         Weight::from_parts(10_000, 0)
     }

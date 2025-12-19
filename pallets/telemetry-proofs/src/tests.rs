@@ -81,26 +81,26 @@ fn proof_hash(hash: &str) -> Vec<u8> {
 fn submit_proof_works() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);
-        
+
         let dev_id = device_id("device-001");
         let hash = proof_hash("abc123hash");
-        
+
         assert_ok!(TelemetryProofs::submit_proof(
             RuntimeOrigin::signed(1),
             dev_id.clone(),
             hash.clone(),
-            10, // record_count
+            10,   // record_count
             1000, // window_start
             2000, // window_end
         ));
-        
+
         // Check proof count
         let bounded_dev_id: BoundedVec<u8, ConstU32<64>> = dev_id.try_into().unwrap();
         assert_eq!(TelemetryProofs::proof_count(&bounded_dev_id), 1);
-        
+
         // Check total proofs
         assert_eq!(TelemetryProofs::total_proofs(), 1);
-        
+
         // Check proof exists
         let proof = TelemetryProofs::proofs(&bounded_dev_id, 0);
         assert!(proof.is_some());
@@ -115,11 +115,11 @@ fn submit_proof_works() {
 fn submit_proof_rejects_duplicate_in_same_block() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);
-        
+
         let dev_id = device_id("device-001");
         let hash1 = proof_hash("hash1");
         let hash2 = proof_hash("hash2");
-        
+
         assert_ok!(TelemetryProofs::submit_proof(
             RuntimeOrigin::signed(1),
             dev_id.clone(),
@@ -128,17 +128,10 @@ fn submit_proof_rejects_duplicate_in_same_block() {
             1000,
             2000,
         ));
-        
+
         // Second proof in same block should fail
         assert_noop!(
-            TelemetryProofs::submit_proof(
-                RuntimeOrigin::signed(1),
-                dev_id,
-                hash2,
-                10,
-                2000,
-                3000,
-            ),
+            TelemetryProofs::submit_proof(RuntimeOrigin::signed(1), dev_id, hash2, 10, 2000, 3000,),
             Error::<Test>::ProofAlreadyExists
         );
     });
@@ -148,7 +141,7 @@ fn submit_proof_rejects_duplicate_in_same_block() {
 fn submit_proof_allows_same_device_different_blocks() {
     new_test_ext().execute_with(|| {
         let dev_id = device_id("device-001");
-        
+
         System::set_block_number(1);
         assert_ok!(TelemetryProofs::submit_proof(
             RuntimeOrigin::signed(1),
@@ -158,7 +151,7 @@ fn submit_proof_allows_same_device_different_blocks() {
             1000,
             2000,
         ));
-        
+
         System::set_block_number(2);
         assert_ok!(TelemetryProofs::submit_proof(
             RuntimeOrigin::signed(1),
@@ -168,7 +161,7 @@ fn submit_proof_allows_same_device_different_blocks() {
             2000,
             3000,
         ));
-        
+
         let bounded_dev_id: BoundedVec<u8, ConstU32<64>> = dev_id.try_into().unwrap();
         assert_eq!(TelemetryProofs::proof_count(&bounded_dev_id), 2);
     });
@@ -178,7 +171,7 @@ fn submit_proof_allows_same_device_different_blocks() {
 fn submit_proof_rejects_invalid_time_window() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);
-        
+
         // window_start >= window_end should fail
         assert_noop!(
             TelemetryProofs::submit_proof(
@@ -191,7 +184,7 @@ fn submit_proof_rejects_invalid_time_window() {
             ),
             Error::<Test>::InvalidTimeWindow
         );
-        
+
         // Equal values should also fail
         assert_noop!(
             TelemetryProofs::submit_proof(
@@ -211,9 +204,9 @@ fn submit_proof_rejects_invalid_time_window() {
 fn submit_proof_rejects_too_long_device_id() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);
-        
+
         let long_id = vec![b'a'; 100]; // Exceeds MaxDeviceIdLength (64)
-        
+
         assert_noop!(
             TelemetryProofs::submit_proof(
                 RuntimeOrigin::signed(1),
@@ -232,26 +225,44 @@ fn submit_proof_rejects_too_long_device_id() {
 fn submit_batch_proofs_works() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);
-        
+
         let proofs = vec![
-            (device_id("device-001"), proof_hash("hash1"), 10, 1000u64, 2000u64),
-            (device_id("device-002"), proof_hash("hash2"), 20, 2000u64, 3000u64),
-            (device_id("device-003"), proof_hash("hash3"), 30, 3000u64, 4000u64),
+            (
+                device_id("device-001"),
+                proof_hash("hash1"),
+                10,
+                1000u64,
+                2000u64,
+            ),
+            (
+                device_id("device-002"),
+                proof_hash("hash2"),
+                20,
+                2000u64,
+                3000u64,
+            ),
+            (
+                device_id("device-003"),
+                proof_hash("hash3"),
+                30,
+                3000u64,
+                4000u64,
+            ),
         ];
-        
+
         assert_ok!(TelemetryProofs::submit_batch_proofs(
             RuntimeOrigin::signed(1),
             proofs,
         ));
-        
+
         // Check total proofs
         assert_eq!(TelemetryProofs::total_proofs(), 3);
-        
+
         // Check each device
         let dev1: BoundedVec<u8, ConstU32<64>> = device_id("device-001").try_into().unwrap();
         let dev2: BoundedVec<u8, ConstU32<64>> = device_id("device-002").try_into().unwrap();
         let dev3: BoundedVec<u8, ConstU32<64>> = device_id("device-003").try_into().unwrap();
-        
+
         assert_eq!(TelemetryProofs::proof_count(&dev1), 1);
         assert_eq!(TelemetryProofs::proof_count(&dev2), 1);
         assert_eq!(TelemetryProofs::proof_count(&dev3), 1);
@@ -262,18 +273,36 @@ fn submit_batch_proofs_works() {
 fn submit_batch_proofs_skips_invalid_entries() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);
-        
+
         let proofs = vec![
-            (device_id("device-001"), proof_hash("hash1"), 10, 1000u64, 2000u64), // Valid
-            (device_id("device-002"), proof_hash("hash2"), 20, 3000u64, 2000u64), // Invalid window
-            (device_id("device-003"), proof_hash("hash3"), 30, 3000u64, 4000u64), // Valid
+            (
+                device_id("device-001"),
+                proof_hash("hash1"),
+                10,
+                1000u64,
+                2000u64,
+            ), // Valid
+            (
+                device_id("device-002"),
+                proof_hash("hash2"),
+                20,
+                3000u64,
+                2000u64,
+            ), // Invalid window
+            (
+                device_id("device-003"),
+                proof_hash("hash3"),
+                30,
+                3000u64,
+                4000u64,
+            ), // Valid
         ];
-        
+
         assert_ok!(TelemetryProofs::submit_batch_proofs(
             RuntimeOrigin::signed(1),
             proofs,
         ));
-        
+
         // Only 2 valid proofs should be stored
         assert_eq!(TelemetryProofs::total_proofs(), 2);
     });
@@ -283,12 +312,9 @@ fn submit_batch_proofs_skips_invalid_entries() {
 fn submit_batch_proofs_rejects_empty_batch() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);
-        
+
         assert_noop!(
-            TelemetryProofs::submit_batch_proofs(
-                RuntimeOrigin::signed(1),
-                vec![],
-            ),
+            TelemetryProofs::submit_batch_proofs(RuntimeOrigin::signed(1), vec![],),
             Error::<Test>::EmptyBatch
         );
     });
@@ -298,10 +324,10 @@ fn submit_batch_proofs_rejects_empty_batch() {
 fn verify_proof_works() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);
-        
+
         let dev_id = device_id("device-001");
         let hash = proof_hash("abc123hash");
-        
+
         // Submit a proof first
         assert_ok!(TelemetryProofs::submit_proof(
             RuntimeOrigin::signed(1),
@@ -311,14 +337,14 @@ fn verify_proof_works() {
             1000,
             2000,
         ));
-        
+
         // Verify existing proof
         assert_ok!(TelemetryProofs::verify_proof(
             RuntimeOrigin::signed(1),
             dev_id.clone(),
             hash,
         ));
-        
+
         // Verify non-existent proof
         assert_ok!(TelemetryProofs::verify_proof(
             RuntimeOrigin::signed(1),
@@ -332,10 +358,10 @@ fn verify_proof_works() {
 fn proof_exists_helper_works() {
     new_test_ext().execute_with(|| {
         System::set_block_number(1);
-        
+
         let dev_id = device_id("device-001");
         let hash = proof_hash("abc123hash");
-        
+
         assert_ok!(TelemetryProofs::submit_proof(
             RuntimeOrigin::signed(1),
             dev_id.clone(),
@@ -344,15 +370,21 @@ fn proof_exists_helper_works() {
             1000,
             2000,
         ));
-        
+
         let bounded_dev_id: BoundedVec<u8, ConstU32<64>> = dev_id.try_into().unwrap();
         let bounded_hash: BoundedVec<u8, ConstU32<128>> = hash.try_into().unwrap();
-        
-        assert!(TelemetryProofs::proof_exists(&bounded_dev_id, &bounded_hash));
-        
-        let nonexistent: BoundedVec<u8, ConstU32<128>> = 
+
+        assert!(TelemetryProofs::proof_exists(
+            &bounded_dev_id,
+            &bounded_hash
+        ));
+
+        let nonexistent: BoundedVec<u8, ConstU32<128>> =
             proof_hash("nonexistent").try_into().unwrap();
-        assert!(!TelemetryProofs::proof_exists(&bounded_dev_id, &nonexistent));
+        assert!(!TelemetryProofs::proof_exists(
+            &bounded_dev_id,
+            &nonexistent
+        ));
     });
 }
 
@@ -360,7 +392,7 @@ fn proof_exists_helper_works() {
 fn get_proofs_in_window_works() {
     new_test_ext().execute_with(|| {
         let dev_id = device_id("device-001");
-        
+
         // Submit proofs at different blocks with different windows
         System::set_block_number(1);
         assert_ok!(TelemetryProofs::submit_proof(
@@ -371,7 +403,7 @@ fn get_proofs_in_window_works() {
             1000,
             2000,
         ));
-        
+
         System::set_block_number(2);
         assert_ok!(TelemetryProofs::submit_proof(
             RuntimeOrigin::signed(1),
@@ -381,7 +413,7 @@ fn get_proofs_in_window_works() {
             2000,
             3000,
         ));
-        
+
         System::set_block_number(3);
         assert_ok!(TelemetryProofs::submit_proof(
             RuntimeOrigin::signed(1),
@@ -391,17 +423,17 @@ fn get_proofs_in_window_works() {
             5000,
             6000,
         ));
-        
+
         let bounded_dev_id: BoundedVec<u8, ConstU32<64>> = dev_id.try_into().unwrap();
-        
+
         // Query window 1000-3000 should return first two proofs
         let proofs = TelemetryProofs::get_proofs_in_window(&bounded_dev_id, 1000, 3000);
         assert_eq!(proofs.len(), 2);
-        
+
         // Query window 4000-7000 should return last proof
         let proofs = TelemetryProofs::get_proofs_in_window(&bounded_dev_id, 4000, 7000);
         assert_eq!(proofs.len(), 1);
-        
+
         // Query window 0-10000 should return all proofs
         let proofs = TelemetryProofs::get_proofs_in_window(&bounded_dev_id, 0, 10000);
         assert_eq!(proofs.len(), 3);
@@ -412,12 +444,11 @@ fn get_proofs_in_window_works() {
 fn latest_proof_block_updated() {
     new_test_ext().execute_with(|| {
         let dev_id = device_id("device-001");
-        let bounded_dev_id: BoundedVec<u8, ConstU32<64>> = 
-            dev_id.clone().try_into().unwrap();
-        
+        let bounded_dev_id: BoundedVec<u8, ConstU32<64>> = dev_id.clone().try_into().unwrap();
+
         // Initially no latest block
         assert!(TelemetryProofs::latest_proof_block(&bounded_dev_id).is_none());
-        
+
         System::set_block_number(5);
         assert_ok!(TelemetryProofs::submit_proof(
             RuntimeOrigin::signed(1),
@@ -427,9 +458,12 @@ fn latest_proof_block_updated() {
             1000,
             2000,
         ));
-        
-        assert_eq!(TelemetryProofs::latest_proof_block(&bounded_dev_id), Some(5));
-        
+
+        assert_eq!(
+            TelemetryProofs::latest_proof_block(&bounded_dev_id),
+            Some(5)
+        );
+
         System::set_block_number(10);
         assert_ok!(TelemetryProofs::submit_proof(
             RuntimeOrigin::signed(1),
@@ -439,7 +473,10 @@ fn latest_proof_block_updated() {
             2000,
             3000,
         ));
-        
-        assert_eq!(TelemetryProofs::latest_proof_block(&bounded_dev_id), Some(10));
+
+        assert_eq!(
+            TelemetryProofs::latest_proof_block(&bounded_dev_id),
+            Some(10)
+        );
     });
 }

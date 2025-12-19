@@ -1,4 +1,4 @@
-﻿//! # Telemetry Proofs Pallet
+//! # Telemetry Proofs Pallet
 //!
 //! This pallet provides functionality for storing and verifying telemetry proofs
 //! from the ARED Edge IoT Platform.
@@ -46,9 +46,9 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use alloc::vec::Vec;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use alloc::vec::Vec;
 
     /// Proof metadata stored alongside the hash
     #[derive(Clone, Encode, Decode, TypeInfo, MaxEncodedLen, Debug, PartialEq)]
@@ -119,20 +119,15 @@ pub mod pallet {
         BlockNumberFor<T>, // block number
         Blake2_128Concat,
         BoundedVec<u8, T::MaxDeviceIdLength>, // device_id
-        BoundedVec<u8, T::MaxProofLength>, // proof hash
+        BoundedVec<u8, T::MaxProofLength>,    // proof hash
         OptionQuery,
     >;
 
     /// Proof count per device (also serves as next proof index)
     #[pallet::storage]
     #[pallet::getter(fn proof_count)]
-    pub type ProofCount<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        BoundedVec<u8, T::MaxDeviceIdLength>,
-        u64,
-        ValueQuery,
-    >;
+    pub type ProofCount<T: Config> =
+        StorageMap<_, Blake2_128Concat, BoundedVec<u8, T::MaxDeviceIdLength>, u64, ValueQuery>;
 
     /// Total proofs submitted across all devices
     #[pallet::storage]
@@ -224,11 +219,13 @@ pub mod pallet {
             // Validate time window
             ensure!(window_start < window_end, Error::<T>::InvalidTimeWindow);
 
-            let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> =
-                device_id.try_into().map_err(|_| Error::<T>::DeviceIdTooLong)?;
+            let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> = device_id
+                .try_into()
+                .map_err(|_| Error::<T>::DeviceIdTooLong)?;
 
-            let bounded_proof: BoundedVec<u8, T::MaxProofLength> =
-                proof_hash.try_into().map_err(|_| Error::<T>::ProofTooLong)?;
+            let bounded_proof: BoundedVec<u8, T::MaxProofLength> = proof_hash
+                .try_into()
+                .map_err(|_| Error::<T>::ProofTooLong)?;
 
             let current_block = <frame_system::Pallet<T>>::block_number();
 
@@ -292,7 +289,10 @@ pub mod pallet {
 
             let batch_len = proofs.len() as u32;
             ensure!(batch_len > 0, Error::<T>::EmptyBatch);
-            ensure!(batch_len <= T::MaxBatchSize::get(), Error::<T>::BatchTooLarge);
+            ensure!(
+                batch_len <= T::MaxBatchSize::get(),
+                Error::<T>::BatchTooLarge
+            );
 
             let current_block = <frame_system::Pallet<T>>::block_number();
 
@@ -308,11 +308,10 @@ pub mod pallet {
                         Err(_) => continue, // Skip invalid device IDs
                     };
 
-                let bounded_proof: BoundedVec<u8, T::MaxProofLength> =
-                    match proof_hash.try_into() {
-                        Ok(hash) => hash,
-                        Err(_) => continue, // Skip invalid proofs
-                    };
+                let bounded_proof: BoundedVec<u8, T::MaxProofLength> = match proof_hash.try_into() {
+                    Ok(hash) => hash,
+                    Err(_) => continue, // Skip invalid proofs
+                };
 
                 // Check limits and duplicates
                 let current_count = ProofCount::<T>::get(&bounded_device_id);
@@ -335,7 +334,11 @@ pub mod pallet {
 
                 let proof_index = current_count;
                 Proofs::<T>::insert(&bounded_device_id, proof_index, metadata);
-                ProofsByBlock::<T>::insert(current_block, &bounded_device_id, bounded_proof.clone());
+                ProofsByBlock::<T>::insert(
+                    current_block,
+                    &bounded_device_id,
+                    bounded_proof.clone(),
+                );
                 ProofCount::<T>::mutate(&bounded_device_id, |count| *count += 1);
                 TotalProofs::<T>::mutate(|total| *total += 1);
                 LatestProofBlock::<T>::insert(&bounded_device_id, current_block);
@@ -376,11 +379,13 @@ pub mod pallet {
         ) -> DispatchResult {
             let _who = ensure_signed(origin)?;
 
-            let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> =
-                device_id.try_into().map_err(|_| Error::<T>::DeviceIdTooLong)?;
+            let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> = device_id
+                .try_into()
+                .map_err(|_| Error::<T>::DeviceIdTooLong)?;
 
-            let bounded_proof: BoundedVec<u8, T::MaxProofLength> =
-                proof_hash.try_into().map_err(|_| Error::<T>::ProofTooLong)?;
+            let bounded_proof: BoundedVec<u8, T::MaxProofLength> = proof_hash
+                .try_into()
+                .map_err(|_| Error::<T>::ProofTooLong)?;
 
             // Search for the proof in device's proof history
             let proof_count = ProofCount::<T>::get(&bounded_device_id);

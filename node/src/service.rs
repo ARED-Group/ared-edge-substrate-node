@@ -23,15 +23,12 @@ use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use sp_runtime::traits::Block as BlockT;
 
-use ared_edge_runtime::{opaque::Block, RuntimeApi};
 use crate::rpc;
+use ared_edge_runtime::{opaque::Block, RuntimeApi};
 
 /// Full client type alias.
-pub type FullClient = sc_service::TFullClient<
-    Block,
-    RuntimeApi,
-    WasmExecutor<sp_io::SubstrateHostFunctions>,
->;
+pub type FullClient =
+    sc_service::TFullClient<Block, RuntimeApi, WasmExecutor<sp_io::SubstrateHostFunctions>>;
 
 /// Full backend type alias.
 pub type FullBackend = sc_service::TFullBackend<Block>;
@@ -40,18 +37,12 @@ pub type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
 /// Full transaction pool type alias.
-type FullPool = sc_transaction_pool::BasicPool<
-    sc_transaction_pool::FullChainApi<FullClient, Block>,
-    Block,
->;
+type FullPool =
+    sc_transaction_pool::BasicPool<sc_transaction_pool::FullChainApi<FullClient, Block>, Block>;
 
 /// Grandpa block import type.
-type GrandpaBlockImport = sc_consensus_grandpa::GrandpaBlockImport<
-    FullBackend,
-    Block,
-    FullClient,
-    FullSelectChain,
->;
+type GrandpaBlockImport =
+    sc_consensus_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>;
 
 /// Grandpa link type.
 type GrandpaLinkHalf = sc_consensus_grandpa::LinkHalf<Block, FullClient, FullSelectChain>;
@@ -129,7 +120,9 @@ fn new_partial(
     let client = Arc::new(client);
 
     let telemetry = telemetry.map(|(worker, telemetry)| {
-        task_manager.spawn_handle().spawn("telemetry", None, worker.run());
+        task_manager
+            .spawn_handle()
+            .spawn("telemetry", None, worker.run());
         telemetry
     });
 
@@ -204,10 +197,8 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
         .flatten()
         .expect("Genesis block exists; qed");
 
-    let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
-        &genesis_hash,
-        &config.chain_spec,
-    );
+    let grandpa_protocol_name =
+        sc_consensus_grandpa::protocol_standard_name(&genesis_hash, &config.chain_spec);
 
     let (grandpa_protocol_config, grandpa_notification_service) =
         sc_consensus_grandpa::grandpa_peers_set_config::<
@@ -351,8 +342,8 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
             protocol_name: grandpa_protocol_name,
         };
 
-        let grandpa_voter = sc_consensus_grandpa::run_grandpa_voter(
-            sc_consensus_grandpa::GrandpaParams {
+        let grandpa_voter =
+            sc_consensus_grandpa::run_grandpa_voter(sc_consensus_grandpa::GrandpaParams {
                 config: grandpa_config,
                 link: grandpa_link,
                 network,
@@ -363,8 +354,7 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
                 shared_voter_state: SharedVoterState::empty(),
                 telemetry: telemetry.as_ref().map(|x| x.handle()),
                 offchain_tx_pool_factory: OffchainTransactionPoolFactory::new(transaction_pool),
-            },
-        )?;
+            })?;
 
         task_manager
             .spawn_essential_handle()

@@ -9,10 +9,10 @@ use frame_support::{traits::Get, weights::Weight};
 pub trait WeightInfo {
     /// Weight for submitting a single proof.
     fn submit_proof() -> Weight;
-    
+
     /// Weight for submitting a batch of proofs.
     fn submit_batch_proofs(n: u32) -> Weight;
-    
+
     /// Weight for verifying a proof exists.
     fn verify_proof() -> Weight;
 }
@@ -41,7 +41,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
             .saturating_add(T::DbWeight::get().reads(2))
             .saturating_add(T::DbWeight::get().writes(5))
     }
-    
+
     /// Weight for submitting a batch of proofs.
     ///
     /// Linear scaling with number of proofs.
@@ -52,7 +52,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
             .saturating_add(T::DbWeight::get().reads(2 * n as u64))
             .saturating_add(T::DbWeight::get().writes(5 * n as u64))
     }
-    
+
     /// Weight for verifying a proof exists.
     ///
     /// Includes:
@@ -61,8 +61,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     /// - Emitting event
     fn verify_proof() -> Weight {
         // Worst case: iterate through MaxProofsPerDevice proofs
-        Weight::from_parts(100_000_000, 0)
-            .saturating_add(T::DbWeight::get().reads(1001)) // count + max proofs
+        Weight::from_parts(100_000_000, 0).saturating_add(T::DbWeight::get().reads(1001))
+        // count + max proofs
     }
 }
 
@@ -71,11 +71,11 @@ impl WeightInfo for () {
     fn submit_proof() -> Weight {
         Weight::from_parts(10_000, 0)
     }
-    
+
     fn submit_batch_proofs(_n: u32) -> Weight {
         Weight::from_parts(10_000, 0)
     }
-    
+
     fn verify_proof() -> Weight {
         Weight::from_parts(10_000, 0)
     }

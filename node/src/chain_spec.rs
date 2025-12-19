@@ -1,4 +1,4 @@
-﻿//! Chain specification for ARED Edge network.
+//! Chain specification for ARED Edge network.
 //!
 //! Defines genesis configuration for different network types:
 //! - Development (single node for local testing)
@@ -22,11 +22,11 @@
 
 use ared_edge_runtime::WASM_BINARY;
 use sc_service::ChainType;
+use serde_json::json;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use serde_json::json;
 
 /// Specialized `ChainSpec` for ARED Edge network.
 pub type ChainSpec = sc_service::GenericChainSpec;
@@ -146,7 +146,7 @@ fn development_genesis_config() -> serde_json::Value {
     let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
     let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
     let bridge = get_account_id_from_seed::<sr25519::Public>("Bridge");
-    
+
     let (alice_aura, alice_grandpa) = authority_keys_from_seed("Alice");
 
     json!({
@@ -175,7 +175,7 @@ fn local_testnet_genesis_config() -> serde_json::Value {
     let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
     let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
     let bridge = get_account_id_from_seed::<sr25519::Public>("Bridge");
-    
+
     let (alice_aura, alice_grandpa) = authority_keys_from_seed("Alice");
     let (bob_aura, bob_grandpa) = authority_keys_from_seed("Bob");
 

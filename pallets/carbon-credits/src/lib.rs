@@ -1,4 +1,4 @@
-﻿//! # Carbon Credits Pallet
+//! # Carbon Credits Pallet
 //!
 //! This pallet provides functionality for calculating and managing carbon credits
 //! based on verified telemetry from cooking stoves.
@@ -48,10 +48,10 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use alloc::vec::Vec;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::Zero;
-    use alloc::vec::Vec;
 
     /// Energy record with metadata
     #[derive(Clone, Encode, Decode, TypeInfo, MaxEncodedLen, Debug, PartialEq)]
@@ -119,46 +119,26 @@ pub mod pallet {
     /// Accumulated energy in Wh per device (pending credit calculation)
     #[pallet::storage]
     #[pallet::getter(fn energy_accumulated)]
-    pub type EnergyAccumulated<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        BoundedVec<u8, T::MaxDeviceIdLength>,
-        u128,
-        ValueQuery,
-    >;
+    pub type EnergyAccumulated<T: Config> =
+        StorageMap<_, Blake2_128Concat, BoundedVec<u8, T::MaxDeviceIdLength>, u128, ValueQuery>;
 
     /// Total lifetime energy recorded per device
     #[pallet::storage]
     #[pallet::getter(fn total_energy)]
-    pub type TotalEnergy<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        BoundedVec<u8, T::MaxDeviceIdLength>,
-        u128,
-        ValueQuery,
-    >;
+    pub type TotalEnergy<T: Config> =
+        StorageMap<_, Blake2_128Concat, BoundedVec<u8, T::MaxDeviceIdLength>, u128, ValueQuery>;
 
     /// Carbon credits balance per device
     #[pallet::storage]
     #[pallet::getter(fn credits_balance)]
-    pub type CreditsBalance<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        BoundedVec<u8, T::MaxDeviceIdLength>,
-        u128,
-        ValueQuery,
-    >;
+    pub type CreditsBalance<T: Config> =
+        StorageMap<_, Blake2_128Concat, BoundedVec<u8, T::MaxDeviceIdLength>, u128, ValueQuery>;
 
     /// Credits balance per account (for transfers)
     #[pallet::storage]
     #[pallet::getter(fn account_credits)]
-    pub type AccountCredits<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        T::AccountId,
-        u128,
-        ValueQuery,
-    >;
+    pub type AccountCredits<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, u128, ValueQuery>;
 
     /// Total credits issued across all devices
     #[pallet::storage]
@@ -173,13 +153,8 @@ pub mod pallet {
     /// Issuance count per device
     #[pallet::storage]
     #[pallet::getter(fn issuance_count)]
-    pub type IssuanceCount<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        BoundedVec<u8, T::MaxDeviceIdLength>,
-        u32,
-        ValueQuery,
-    >;
+    pub type IssuanceCount<T: Config> =
+        StorageMap<_, Blake2_128Concat, BoundedVec<u8, T::MaxDeviceIdLength>, u32, ValueQuery>;
 
     /// Active device count (devices with energy records)
     #[pallet::storage]
@@ -215,10 +190,7 @@ pub mod pallet {
             amount: u128,
         },
         /// Emission factor updated
-        EmissionFactorUpdated {
-            old_factor: u32,
-            new_factor: u32,
-        },
+        EmissionFactorUpdated { old_factor: u32, new_factor: u32 },
     }
 
     #[pallet::error]
@@ -264,8 +236,9 @@ pub mod pallet {
         ) -> DispatchResult {
             let _who = ensure_signed(origin)?;
 
-            let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> =
-                device_id.try_into().map_err(|_| Error::<T>::DeviceIdTooLong)?;
+            let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> = device_id
+                .try_into()
+                .map_err(|_| Error::<T>::DeviceIdTooLong)?;
 
             // Track if this is a new device
             let was_zero = EnergyAccumulated::<T>::get(&bounded_device_id).is_zero()
@@ -308,14 +281,12 @@ pub mod pallet {
         /// - `device_id` - The device identifier
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::claim_credits())]
-        pub fn claim_credits(
-            origin: OriginFor<T>,
-            device_id: Vec<u8>,
-        ) -> DispatchResult {
+        pub fn claim_credits(origin: OriginFor<T>, device_id: Vec<u8>) -> DispatchResult {
             let _who = ensure_signed(origin)?;
 
-            let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> =
-                device_id.try_into().map_err(|_| Error::<T>::DeviceIdTooLong)?;
+            let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> = device_id
+                .try_into()
+                .map_err(|_| Error::<T>::DeviceIdTooLong)?;
 
             let accumulated = EnergyAccumulated::<T>::get(&bounded_device_id);
             ensure!(!accumulated.is_zero(), Error::<T>::NoCreditsAvailable);
@@ -329,7 +300,7 @@ pub mod pallet {
             // accumulated is in Wh
             let emission_factor = EmissionFactor::<T>::get() as u128;
             let energy_kwh = accumulated / 1000;
-            
+
             // co2_avoided_kg = energy_kwh * (emission_factor / 1000)
             let co2_avoided_kg = energy_kwh
                 .saturating_mul(emission_factor)
@@ -392,10 +363,12 @@ pub mod pallet {
         ) -> DispatchResult {
             let _who = ensure_signed(origin)?;
 
-            let bounded_from: BoundedVec<u8, T::MaxDeviceIdLength> =
-                from_device.try_into().map_err(|_| Error::<T>::DeviceIdTooLong)?;
-            let bounded_to: BoundedVec<u8, T::MaxDeviceIdLength> =
-                to_device.try_into().map_err(|_| Error::<T>::DeviceIdTooLong)?;
+            let bounded_from: BoundedVec<u8, T::MaxDeviceIdLength> = from_device
+                .try_into()
+                .map_err(|_| Error::<T>::DeviceIdTooLong)?;
+            let bounded_to: BoundedVec<u8, T::MaxDeviceIdLength> = to_device
+                .try_into()
+                .map_err(|_| Error::<T>::DeviceIdTooLong)?;
 
             ensure!(bounded_from != bounded_to, Error::<T>::SameDeviceTransfer);
 
@@ -437,8 +410,9 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> =
-                device_id.try_into().map_err(|_| Error::<T>::DeviceIdTooLong)?;
+            let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> = device_id
+                .try_into()
+                .map_err(|_| Error::<T>::DeviceIdTooLong)?;
 
             let device_balance = CreditsBalance::<T>::get(&bounded_device_id);
             ensure!(device_balance >= amount, Error::<T>::InsufficientCredits);
@@ -467,10 +441,7 @@ pub mod pallet {
         /// - `new_factor` - New emission factor (kg CO2/kWh, scaled by 1000)
         #[pallet::call_index(4)]
         #[pallet::weight(T::WeightInfo::set_emission_factor())]
-        pub fn set_emission_factor(
-            origin: OriginFor<T>,
-            new_factor: u32,
-        ) -> DispatchResult {
+        pub fn set_emission_factor(origin: OriginFor<T>, new_factor: u32) -> DispatchResult {
             ensure_root(origin)?;
             ensure!(new_factor > 0, Error::<T>::InvalidEmissionFactor);
 
@@ -489,16 +460,12 @@ pub mod pallet {
     // Public query functions
     impl<T: Config> Pallet<T> {
         /// Get total credits for a device.
-        pub fn get_device_credits(
-            device_id: &BoundedVec<u8, T::MaxDeviceIdLength>,
-        ) -> u128 {
+        pub fn get_device_credits(device_id: &BoundedVec<u8, T::MaxDeviceIdLength>) -> u128 {
             CreditsBalance::<T>::get(device_id)
         }
 
         /// Get pending energy (not yet converted to credits).
-        pub fn get_pending_energy(
-            device_id: &BoundedVec<u8, T::MaxDeviceIdLength>,
-        ) -> u128 {
+        pub fn get_pending_energy(device_id: &BoundedVec<u8, T::MaxDeviceIdLength>) -> u128 {
             EnergyAccumulated::<T>::get(device_id)
         }
 
