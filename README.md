@@ -97,19 +97,19 @@ Related Documentation
 - [Storage Retention](../edge-iot-mqtt-services/docs/STORAGE_RETENTION.md) - Data retention policies
 
 Storage Requirements
-| Component | Storage Type | Recommended Size | Notes |
-|-----------|--------------|------------------|-------|
-| Chain DB | Longhorn PVC | 50GB minimum | RocksDB/ParityDB, grows with chain history |
-| Snapshots | MinIO/S3 | 100GB | Periodic backups for disaster recovery |
-| Logs | Ephemeral | 1GB | Structured JSON, ship to centralized logging |
+**Storage Requirements:**
+
+- Chain DB: Longhorn PVC, 50GB minimum, RocksDB/ParityDB grows with chain history
+- Snapshots: MinIO/S3, 100GB, periodic backups for disaster recovery
+- Logs: Ephemeral, 1GB, structured JSON shipped to centralized logging
 
 Failure Recovery
-| Failure Mode | Detection | Recovery |
-|--------------|-----------|----------|
-| Node crash | Liveness probe failure | K8s auto-restart, resume from persisted state |
-| DB corruption | Health check, block import errors | Restore from snapshot, resync from peers |
-| Network partition | Peer count drop, finalization stall | Wait for network recovery, manual peer injection |
-| Resource exhaustion | OOM kill, CPU throttle | Increase limits, optimize runtime |
+**Failure Recovery:**
+
+- Node crash: Detected by liveness probe failure, recovery via K8s auto-restart and resume from persisted state
+- DB corruption: Detected by health check and block import errors, recovery via restore from snapshot and resync from peers
+- Network partition: Detected by peer count drop and finalization stall, recovery via wait for network recovery and manual peer injection
+- Resource exhaustion: Detected by OOM kill and CPU throttle, recovery via increase limits and optimize runtime
 
 License
 - Add LICENSE in repo root (choose appropriate open-source license).
