@@ -677,10 +677,13 @@ pub mod pallet {
                         return InvalidTransaction::Custom(5).into();
                     }
 
+                    // Use batch size as u32 for the provides tag
+                    let batch_size = proofs.len() as u32;
+
                     ValidTransaction::with_tag_prefix("TelemetryProofBatch")
                         .priority(100)
                         .longevity(5)
-                        .and_provides(proofs.len())
+                        .and_provides(batch_size)
                         .propagate(true)
                         .build()
                 }
