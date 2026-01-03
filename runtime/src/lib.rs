@@ -119,10 +119,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: sp_runtime::create_runtime_str!("ared-edge"),
     impl_name: sp_runtime::create_runtime_str!("ared-edge-node"),
     authoring_version: 1,
-    spec_version: 102,
+    spec_version: 103,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 1,
+    transaction_version: 2,
     state_version: 1,
 };
 
