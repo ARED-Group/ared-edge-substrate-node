@@ -49,6 +49,9 @@ pub mod pallet {
     use alloc::vec::Vec;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use sp_runtime::transaction_validity::{
+        InvalidTransaction, TransactionSource, TransactionValidity, ValidTransaction,
+    };
 
     /// Proof metadata stored alongside the hash
     #[derive(Clone, Encode, Decode, TypeInfo, MaxEncodedLen, Debug, PartialEq)]
@@ -158,6 +161,11 @@ pub mod pallet {
         /// A batch of proofs was submitted
         BatchProofsSubmitted {
             submitter: T::AccountId,
+            proof_count: u32,
+            block_number: BlockNumberFor<T>,
+        },
+        /// A batch of unsigned proofs was submitted
+        UnsignedBatchProofsSubmitted {
             proof_count: u32,
             block_number: BlockNumberFor<T>,
         },
@@ -408,6 +416,175 @@ pub mod pallet {
 
             Ok(())
         }
+
+        /// Submit a telemetry proof without requiring a signed transaction.
+        ///
+        /// This extrinsic is validated via ValidateUnsigned and is intended for
+        /// use by the blockchain bridge service where authentication happens at
+        /// the MQTT/API layer rather than the blockchain layer.
+        ///
+        /// # Arguments
+        ///
+        /// - `origin` - Must be none (unsigned)
+        /// - `device_id` - The device identifier (UUID format)
+        /// - `proof_hash` - The cryptographic hash of the telemetry batch
+        /// - `record_count` - Number of telemetry records in this batch
+        /// - `window_start` - Start timestamp of the telemetry window
+        /// - `window_end` - End timestamp of the telemetry window
+        #[pallet::call_index(3)]
+        #[pallet::weight(T::WeightInfo::submit_proof())]
+        pub fn submit_proof_unsigned(
+            origin: OriginFor<T>,
+            device_id: Vec<u8>,
+            proof_hash: Vec<u8>,
+            record_count: u32,
+            window_start: u64,
+            window_end: u64,
+        ) -> DispatchResult {
+            ensure_none(origin)?;
+
+            // Validate time window
+            ensure!(window_start < window_end, Error::<T>::InvalidTimeWindow);
+
+            let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> = device_id
+                .try_into()
+                .map_err(|_| Error::<T>::DeviceIdTooLong)?;
+
+            let bounded_proof: BoundedVec<u8, T::MaxProofLength> = proof_hash
+                .try_into()
+                .map_err(|_| Error::<T>::ProofTooLong)?;
+
+            let current_block = <frame_system::Pallet<T>>::block_number();
+
+            // Check max proofs per device
+            let current_count = ProofCount::<T>::get(&bounded_device_id);
+            ensure!(
+                current_count < T::MaxProofsPerDevice::get() as u64,
+                Error::<T>::MaxProofsExceeded
+            );
+
+            // Check for duplicate at same block
+            ensure!(
+                !ProofsByBlock::<T>::contains_key(current_block, &bounded_device_id),
+                Error::<T>::ProofAlreadyExists
+            );
+
+            // Create proof metadata
+            let metadata = ProofMetadata::<T> {
+                proof_hash: bounded_proof.clone(),
+                block_number: current_block,
+                timestamp: 0,
+                record_count,
+                window_start,
+                window_end,
+            };
+
+            // Store proof with index
+            let proof_index = current_count;
+            Proofs::<T>::insert(&bounded_device_id, proof_index, metadata);
+            ProofsByBlock::<T>::insert(current_block, &bounded_device_id, bounded_proof.clone());
+            ProofCount::<T>::mutate(&bounded_device_id, |count| *count += 1);
+            TotalProofs::<T>::mutate(|total| *total += 1);
+            LatestProofBlock::<T>::insert(&bounded_device_id, current_block);
+
+            Self::deposit_event(Event::ProofSubmitted {
+                device_id: bounded_device_id,
+                proof_hash: bounded_proof,
+                block_number: current_block,
+                proof_index,
+            });
+
+            Ok(())
+        }
+
+        /// Submit multiple proofs in a single unsigned transaction.
+        ///
+        /// This is more efficient than multiple individual submissions.
+        /// Validated via ValidateUnsigned for bridge service use.
+        ///
+        /// # Arguments
+        ///
+        /// - `origin` - Must be none (unsigned)
+        /// - `proofs` - Vector of (device_id, proof_hash, record_count, window_start, window_end)
+        #[pallet::call_index(4)]
+        #[pallet::weight(T::WeightInfo::submit_batch_proofs(proofs.len() as u32))]
+        pub fn submit_batch_proofs_unsigned(
+            origin: OriginFor<T>,
+            proofs: Vec<(Vec<u8>, Vec<u8>, u32, u64, u64)>,
+        ) -> DispatchResult {
+            ensure_none(origin)?;
+
+            let batch_len = proofs.len() as u32;
+            ensure!(batch_len > 0, Error::<T>::EmptyBatch);
+            ensure!(
+                batch_len <= T::MaxBatchSize::get(),
+                Error::<T>::BatchTooLarge
+            );
+
+            let current_block = <frame_system::Pallet<T>>::block_number();
+            let mut successful_count = 0u32;
+
+            for (device_id, proof_hash, record_count, window_start, window_end) in proofs {
+                if window_start >= window_end {
+                    continue;
+                }
+
+                let bounded_device_id: BoundedVec<u8, T::MaxDeviceIdLength> =
+                    match device_id.try_into() {
+                        Ok(id) => id,
+                        Err(_) => continue,
+                    };
+
+                let bounded_proof: BoundedVec<u8, T::MaxProofLength> = match proof_hash.try_into() {
+                    Ok(hash) => hash,
+                    Err(_) => continue,
+                };
+
+                let current_count = ProofCount::<T>::get(&bounded_device_id);
+                if current_count >= T::MaxProofsPerDevice::get() as u64 {
+                    continue;
+                }
+                if ProofsByBlock::<T>::contains_key(current_block, &bounded_device_id) {
+                    continue;
+                }
+
+                let metadata = ProofMetadata::<T> {
+                    proof_hash: bounded_proof.clone(),
+                    block_number: current_block,
+                    timestamp: 0,
+                    record_count,
+                    window_start,
+                    window_end,
+                };
+
+                let proof_index = current_count;
+                Proofs::<T>::insert(&bounded_device_id, proof_index, metadata);
+                ProofsByBlock::<T>::insert(
+                    current_block,
+                    &bounded_device_id,
+                    bounded_proof.clone(),
+                );
+                ProofCount::<T>::mutate(&bounded_device_id, |count| *count += 1);
+                TotalProofs::<T>::mutate(|total| *total += 1);
+                LatestProofBlock::<T>::insert(&bounded_device_id, current_block);
+
+                Self::deposit_event(Event::ProofSubmitted {
+                    device_id: bounded_device_id,
+                    proof_hash: bounded_proof,
+                    block_number: current_block,
+                    proof_index,
+                });
+
+                successful_count += 1;
+            }
+
+            Self::deposit_event(Event::UnsignedBatchProofsSubmitted {
+                proof_count: successful_count,
+                block_number: current_block,
+            });
+
+            Ok(())
+        }
     }
 
     // Public query functions for runtime APIs
@@ -457,6 +634,58 @@ pub mod pallet {
                 .filter_map(|i| Proofs::<T>::get(device_id, i))
                 .filter(|m| m.window_start >= start_time && m.window_end <= end_time)
                 .collect()
+        }
+    }
+
+    #[pallet::validate_unsigned]
+    impl<T: Config> ValidateUnsigned for Pallet<T> {
+        type Call = Call<T>;
+
+        fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+            match call {
+                Call::submit_proof_unsigned {
+                    device_id,
+                    proof_hash,
+                    window_start,
+                    window_end,
+                    ..
+                } => {
+                    // Basic validation before accepting into pool
+                    if device_id.len() > T::MaxDeviceIdLength::get() as usize {
+                        return InvalidTransaction::Custom(1).into();
+                    }
+                    if proof_hash.len() > T::MaxProofLength::get() as usize {
+                        return InvalidTransaction::Custom(2).into();
+                    }
+                    if window_start >= window_end {
+                        return InvalidTransaction::Custom(3).into();
+                    }
+
+                    ValidTransaction::with_tag_prefix("TelemetryProof")
+                        .priority(100)
+                        .longevity(5)
+                        .and_provides((device_id.clone(), proof_hash.clone()))
+                        .propagate(true)
+                        .build()
+                }
+                Call::submit_batch_proofs_unsigned { proofs } => {
+                    // Validate batch constraints
+                    if proofs.is_empty() {
+                        return InvalidTransaction::Custom(4).into();
+                    }
+                    if proofs.len() > T::MaxBatchSize::get() as usize {
+                        return InvalidTransaction::Custom(5).into();
+                    }
+
+                    ValidTransaction::with_tag_prefix("TelemetryProofBatch")
+                        .priority(100)
+                        .longevity(5)
+                        .and_provides(proofs.len())
+                        .propagate(true)
+                        .build()
+                }
+                _ => InvalidTransaction::Call.into(),
+            }
         }
     }
 }
