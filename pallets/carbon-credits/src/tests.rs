@@ -300,7 +300,7 @@ fn withdraw_credits_works() {
             CarbonCredits::credits_balance(&bounded_dev_id),
             device_balance - withdraw_amount
         );
-        assert_eq!(CarbonCredits::account_credits(&account), withdraw_amount);
+        assert_eq!(CarbonCredits::account_credits(account), withdraw_amount);
     });
 }
 
