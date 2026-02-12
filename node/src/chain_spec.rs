@@ -20,6 +20,8 @@
 //! - Initial validator set
 //! - Pallet configurations
 
+use std::env;
+
 use ared_edge_runtime::WASM_BINARY;
 use sc_service::ChainType;
 use serde_json::json;
@@ -113,12 +115,21 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 
 /// Production chain configuration.
 ///
-/// Characteristics:
-/// - Multiple validators for security
-/// - Sudo disabled (governance-based administration)
-/// - Conservative resource limits
-/// - Production-ready parameters
+/// For real deployments, set `CHAIN_SPEC_PATH` to a JSON chain spec generated
+/// with securely created validator keys (see docs/KEY_GENERATION.md).
+/// If the env var is absent, falls back to seed-derived placeholder keys
+/// suitable only for pre-production testing.
 pub fn production_config() -> Result<ChainSpec, String> {
+    if let Ok(path) = env::var("CHAIN_SPEC_PATH") {
+        log::info!("Loading production chain spec from {}", path);
+        return ChainSpec::from_json_file(std::path::PathBuf::from(path));
+    }
+
+    log::warn!(
+        "CHAIN_SPEC_PATH not set — using seed-derived placeholder keys. \
+         This is NOT safe for mainnet. Generate a chain spec JSON with real keys."
+    );
+
     Ok(ChainSpec::builder(
         WASM_BINARY.ok_or_else(|| "Production wasm not available".to_string())?,
         None,
@@ -206,13 +217,14 @@ fn local_testnet_genesis_config() -> serde_json::Value {
     })
 }
 
-/// Genesis configuration for production network.
+/// Placeholder genesis configuration for production network.
 ///
-/// Note: In production, actual validator keys should be generated
-/// securely and not from seeds. This is a template.
+/// WARNING: These keys are derived from well-known seeds and are NOT secure.
+/// For mainnet, generate a chain spec JSON externally using `subkey` and
+/// pass its path via `CHAIN_SPEC_PATH` or `--chain=/path/to/spec.json`.
 fn production_genesis_config() -> serde_json::Value {
-    // Production accounts would be configured from environment or secure key management
-    // These are placeholder values that MUST be replaced before mainnet launch
+    // Seed-derived keys for pre-production testing only.
+    // Real deployments MUST use CHAIN_SPEC_PATH with externally generated keys.
     let root = get_account_id_from_seed::<sr25519::Public>("Root");
     let bridge = get_account_id_from_seed::<sr25519::Public>("Bridge");
     let validator1 = get_account_id_from_seed::<sr25519::Public>("Validator1");
