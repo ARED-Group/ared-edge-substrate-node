@@ -647,7 +647,13 @@ pub mod pallet {
     impl<T: Config> ValidateUnsigned for Pallet<T> {
         type Call = Call<T>;
 
-        fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+        fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+            // Only accept unsigned extrinsics from local sources (co-located bridge).
+            // InBlock is also accepted for re-validation during block import.
+            if !matches!(source, TransactionSource::Local | TransactionSource::InBlock) {
+                return InvalidTransaction::BadSigner.into();
+            }
+
             match call {
                 Call::submit_proof_unsigned {
                     device_id,
@@ -656,7 +662,6 @@ pub mod pallet {
                     window_end,
                     ..
                 } => {
-                    // Basic validation before accepting into pool
                     if device_id.len() > T::MaxDeviceIdLength::get() as usize {
                         return InvalidTransaction::Custom(1).into();
                     }
@@ -667,15 +672,16 @@ pub mod pallet {
                         return InvalidTransaction::Custom(3).into();
                     }
 
+                    // Provides tag ties to (device_id, proof_hash) so the same
+                    // proof cannot sit in the pool twice.
                     ValidTransaction::with_tag_prefix("TelemetryProof")
                         .priority(100)
                         .longevity(5)
                         .and_provides((device_id.clone(), proof_hash.clone()))
-                        .propagate(true)
+                        .propagate(false)
                         .build()
                 }
                 Call::submit_batch_proofs_unsigned { proofs } => {
-                    // Validate batch constraints
                     if proofs.is_empty() {
                         return InvalidTransaction::Custom(4).into();
                     }
@@ -683,14 +689,18 @@ pub mod pallet {
                         return InvalidTransaction::Custom(5).into();
                     }
 
-                    // Use batch size as u32 for the provides tag
-                    let batch_size = proofs.len() as u32;
+                    // Build a deterministic provides tag from the first and last
+                    // entries so identical batches are deduplicated in the pool.
+                    let tag: (Vec<u8>, Vec<u8>) = (
+                        proofs.first().map(|p| p.0.clone()).unwrap_or_default(),
+                        proofs.last().map(|p| p.1.clone()).unwrap_or_default(),
+                    );
 
                     ValidTransaction::with_tag_prefix("TelemetryProofBatch")
                         .priority(100)
                         .longevity(5)
-                        .and_provides(batch_size)
-                        .propagate(true)
+                        .and_provides(tag)
+                        .propagate(false)
                         .build()
                 }
                 _ => InvalidTransaction::Call.into(),
