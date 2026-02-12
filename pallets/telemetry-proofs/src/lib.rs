@@ -53,6 +53,9 @@ pub mod pallet {
         InvalidTransaction, TransactionSource, TransactionValidity, ValidTransaction,
     };
 
+    /// Batch proof entry: (device_id, proof_hash, record_count, window_start, window_end)
+    pub type BatchProofEntry = (Vec<u8>, Vec<u8>, u32, u64, u64);
+
     /// Proof metadata stored alongside the hash
     #[derive(Clone, Encode, Decode, TypeInfo, MaxEncodedLen, Debug, PartialEq)]
     #[scale_info(skip_type_params(T))]
@@ -291,7 +294,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::submit_batch_proofs(proofs.len() as u32))]
         pub fn submit_batch_proofs(
             origin: OriginFor<T>,
-            proofs: Vec<(Vec<u8>, Vec<u8>, u32, u64, u64)>,
+            proofs: Vec<BatchProofEntry>,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
@@ -510,7 +513,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::submit_batch_proofs(proofs.len() as u32))]
         pub fn submit_batch_proofs_unsigned(
             origin: OriginFor<T>,
-            proofs: Vec<(Vec<u8>, Vec<u8>, u32, u64, u64)>,
+            proofs: Vec<BatchProofEntry>,
         ) -> DispatchResult {
             ensure_none(origin)?;
 

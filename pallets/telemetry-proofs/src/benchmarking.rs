@@ -33,7 +33,7 @@ mod benchmarks {
     #[benchmark]
     fn submit_batch_proofs(n: Linear<1, 100>) {
         let caller: T::AccountId = whitelisted_caller();
-        let proofs: Vec<(Vec<u8>, Vec<u8>, u32, u64, u64)> = (0..n)
+        let proofs: Vec<pallet::BatchProofEntry> = (0..n)
             .map(|i| (vec![i as u8; 36], vec![i as u8; 32], 10u32, 0u64, 3600u64))
             .collect();
 
