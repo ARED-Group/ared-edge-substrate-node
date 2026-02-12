@@ -14,7 +14,7 @@ on:
       - 'docs/**'
 
 env:
-  RUST_VERSION: '1.84'
+  RUST_VERSION: '1.85'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/ared-edge-substrate-node
 
