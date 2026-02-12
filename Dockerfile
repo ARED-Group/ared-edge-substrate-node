@@ -64,7 +64,7 @@ RUN mkdir -p node/src runtime/src && \
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
     --mount=type=cache,target=/build/target,sharing=locked \
-    cargo build --${CARGO_PROFILE} --locked --package ared-edge-node || true
+    cargo build --${CARGO_PROFILE} --package ared-edge-node || true
 
 # Copy actual source code
 COPY . .
@@ -73,7 +73,7 @@ COPY . .
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
     --mount=type=cache,target=/build/target,sharing=locked \
-    cargo build --${CARGO_PROFILE} --locked --package ared-edge-node && \
+    cargo build --${CARGO_PROFILE} --package ared-edge-node && \
     cp /build/target/${CARGO_PROFILE}/ared-edge-node /build/ared-edge-node
 
 # -----------------------------------------------------------------------------
