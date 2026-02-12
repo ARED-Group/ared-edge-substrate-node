@@ -213,7 +213,7 @@ pub mod pallet {
         /// - `window_start` - Start timestamp of the telemetry window
         /// - `window_end` - End timestamp of the telemetry window
         #[pallet::call_index(0)]
-        #[pallet::weight(T::WeightInfo::submit_proof())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::submit_proof())]
         pub fn submit_proof(
             origin: OriginFor<T>,
             device_id: Vec<u8>,
@@ -288,7 +288,7 @@ pub mod pallet {
         /// - `origin` - The transaction origin (must be signed by bridge account)
         /// - `proofs` - Vector of (device_id, proof_hash, record_count, window_start, window_end)
         #[pallet::call_index(1)]
-        #[pallet::weight(T::WeightInfo::submit_batch_proofs(proofs.len() as u32))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::submit_batch_proofs(proofs.len() as u32))]
         pub fn submit_batch_proofs(
             origin: OriginFor<T>,
             proofs: Vec<(Vec<u8>, Vec<u8>, u32, u64, u64)>,
@@ -379,7 +379,7 @@ pub mod pallet {
         /// - `device_id` - The device identifier
         /// - `proof_hash` - The proof hash to verify
         #[pallet::call_index(2)]
-        #[pallet::weight(T::WeightInfo::verify_proof())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::verify_proof())]
         pub fn verify_proof(
             origin: OriginFor<T>,
             device_id: Vec<u8>,
@@ -432,7 +432,7 @@ pub mod pallet {
         /// - `window_start` - Start timestamp of the telemetry window
         /// - `window_end` - End timestamp of the telemetry window
         #[pallet::call_index(3)]
-        #[pallet::weight(T::WeightInfo::submit_proof())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::submit_proof())]
         pub fn submit_proof_unsigned(
             origin: OriginFor<T>,
             device_id: Vec<u8>,
@@ -507,7 +507,7 @@ pub mod pallet {
         /// - `origin` - Must be none (unsigned)
         /// - `proofs` - Vector of (device_id, proof_hash, record_count, window_start, window_end)
         #[pallet::call_index(4)]
-        #[pallet::weight(T::WeightInfo::submit_batch_proofs(proofs.len() as u32))]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::submit_batch_proofs(proofs.len() as u32))]
         pub fn submit_batch_proofs_unsigned(
             origin: OriginFor<T>,
             proofs: Vec<(Vec<u8>, Vec<u8>, u32, u64, u64)>,
