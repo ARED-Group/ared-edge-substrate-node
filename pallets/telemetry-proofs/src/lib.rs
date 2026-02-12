@@ -73,7 +73,7 @@ pub mod pallet {
 
     /// The pallet's configuration trait.
     #[pallet::config]
-    pub trait Config: frame_system::Config {
+    pub trait Config: frame_system::Config + pallet_timestamp::Config {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -254,7 +254,7 @@ pub mod pallet {
             let metadata = ProofMetadata::<T> {
                 proof_hash: bounded_proof.clone(),
                 block_number: current_block,
-                timestamp: 0, // Would use pallet_timestamp if configured
+                timestamp: Self::current_timestamp(),
                 record_count,
                 window_start,
                 window_end,
@@ -334,7 +334,7 @@ pub mod pallet {
                 let metadata = ProofMetadata::<T> {
                     proof_hash: bounded_proof.clone(),
                     block_number: current_block,
-                    timestamp: 0,
+                    timestamp: Self::current_timestamp(),
                     record_count,
                     window_start,
                     window_end,
@@ -473,7 +473,7 @@ pub mod pallet {
             let metadata = ProofMetadata::<T> {
                 proof_hash: bounded_proof.clone(),
                 block_number: current_block,
-                timestamp: 0,
+                timestamp: Self::current_timestamp(),
                 record_count,
                 window_start,
                 window_end,
@@ -551,7 +551,7 @@ pub mod pallet {
                 let metadata = ProofMetadata::<T> {
                     proof_hash: bounded_proof.clone(),
                     block_number: current_block,
-                    timestamp: 0,
+                    timestamp: Self::current_timestamp(),
                     record_count,
                     window_start,
                     window_end,
@@ -589,6 +589,12 @@ pub mod pallet {
 
     // Public query functions for runtime APIs
     impl<T: Config> Pallet<T> {
+        /// Read the current on-chain timestamp from pallet_timestamp.
+        fn current_timestamp() -> u64 {
+            let moment = <pallet_timestamp::Pallet<T>>::get();
+            moment.try_into().unwrap_or(0)
+        }
+
         /// Get proof metadata by device and index.
         pub fn get_proof(
             device_id: &BoundedVec<u8, T::MaxDeviceIdLength>,

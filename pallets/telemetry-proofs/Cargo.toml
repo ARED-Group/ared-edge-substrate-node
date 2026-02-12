@@ -17,6 +17,7 @@ scale-info.workspace = true
 frame-support.workspace = true
 frame-system.workspace = true
 sp-runtime.workspace = true
+pallet-timestamp = { workspace = true, default-features = false }
 log.workspace = true
 
 [dev-dependencies]
@@ -31,6 +32,7 @@ std = [
     "frame-support/std",
     "frame-system/std",
     "sp-runtime/std",
+    "pallet-timestamp/std",
     "log/std",
 ]
 runtime-benchmarks = [
