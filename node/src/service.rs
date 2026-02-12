@@ -47,6 +47,16 @@ type GrandpaBlockImport =
 /// Grandpa link type.
 type GrandpaLinkHalf = sc_consensus_grandpa::LinkHalf<Block, FullClient, FullSelectChain>;
 
+/// Partial components returned by `new_partial`.
+type ServiceComponents = sc_service::PartialComponents<
+    FullClient,
+    FullBackend,
+    FullSelectChain,
+    sc_consensus::DefaultImportQueue<Block>,
+    FullPool,
+    (GrandpaBlockImport, GrandpaLinkHalf, Option<Telemetry>),
+>;
+
 /// Grandpa justification period for block finality.
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
@@ -85,19 +95,7 @@ fn build_import_queue(
 }
 
 /// Build partial components of the service.
-fn new_partial(
-    config: &Configuration,
-) -> Result<
-    sc_service::PartialComponents<
-        FullClient,
-        FullBackend,
-        FullSelectChain,
-        sc_consensus::DefaultImportQueue<Block>,
-        FullPool,
-        (GrandpaBlockImport, GrandpaLinkHalf, Option<Telemetry>),
-    >,
-    ServiceError,
-> {
+fn new_partial(config: &Configuration) -> Result<ServiceComponents, ServiceError> {
     let telemetry = config
         .telemetry_endpoints
         .clone()
