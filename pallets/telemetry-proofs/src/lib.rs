@@ -650,7 +650,10 @@ pub mod pallet {
         fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
             // Only accept unsigned extrinsics from local sources (co-located bridge).
             // InBlock is also accepted for re-validation during block import.
-            if !matches!(source, TransactionSource::Local | TransactionSource::InBlock) {
+            if !matches!(
+                source,
+                TransactionSource::Local | TransactionSource::InBlock
+            ) {
                 return InvalidTransaction::BadSigner.into();
             }
 
