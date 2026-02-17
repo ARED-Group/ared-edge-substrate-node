@@ -651,14 +651,10 @@ pub mod pallet {
         type Call = Call<T>;
 
         fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-            // Only accept unsigned extrinsics from local sources (co-located bridge).
-            // InBlock is also accepted for re-validation during block import.
-            if !matches!(
-                source,
-                TransactionSource::Local | TransactionSource::InBlock
-            ) {
-                return InvalidTransaction::BadSigner.into();
-            }
+            // Accept from all sources: External (RPC submission by authenticated bridge),
+            // Local (same-node submission), and InBlock (re-validation during import).
+            // Bridge authentication is enforced at the API layer (subxt-bridge API key).
+            let _ = source;
 
             match call {
                 Call::submit_proof_unsigned {
